@@ -1,0 +1,17 @@
+8-Bit Sound Effect Pack (Vol. 001)
+=================================
+
+Creator: Deva / @Shades
+Source:
+https://opengameart.org/content/8-bit-sound-effect-pack-vol-001
+
+License: Creative Commons Zero (CC0 1.0)
+https://creativecommons.org/publicdomain/zero/1.0/
+
+Files used:
+- GameJump.wav: Jump 1.wav
+- GameCollectStar.wav: Coin 3.wav
+- GamePlayerDamaged.wav: Hit 2.wav
+- GameEnemyStomp.wav: Hit 3.wav
+
+The source pack is free for personal, educational, and commercial use.

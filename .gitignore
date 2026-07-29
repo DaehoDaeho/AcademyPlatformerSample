@@ -1,0 +1,42 @@
+# Unity가 자동 생성하는 캐시와 임시 파일
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# Unity가 외부 코드 편집기용으로 다시 생성하는 파일
+/*.csproj
+/*.sln
+/*.slnx
+/*.unityproj
+/*.pidb
+/*.booproj
+/*.svd
+/*.pdb
+/*.mdb
+/*.opendb
+/*.VC.db
+
+# Visual Studio, VS Code와 Rider 설정
+/.vs/
+/.vscode/
+/.idea/
+/.idea.*/
+*.suo
+*.user
+*.userprefs
+*.tmp
+
+# 운영체제 파일
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# 프로젝트 검증 과정에서 생성된 로그
+/*.log
+
