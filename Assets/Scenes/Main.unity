@@ -143,6 +143,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Patrol Enemy D
       objectReference: {fileID: 0}
+    - target: {fileID: 7268976880930146436, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 8015118938415093620, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 34.7
@@ -445,7 +449,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -673,7 +677,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -776,7 +780,7 @@ MonoBehaviour:
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 10
-    m_MaxSize: 40
+    m_MaxSize: 64
     m_Alignment: 4
     m_AlignByGeometry: 0
     m_RichText: 1
@@ -796,6 +800,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 8
@@ -853,6 +861,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 27
@@ -989,6 +1001,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 53
@@ -1046,6 +1062,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chasing Enemy B
       objectReference: {fileID: 0}
+    - target: {fileID: 3878772234755551660, guid: 6cce15f4b9d87c24f91e979b565564e1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 6607830605255775272, guid: 6cce15f4b9d87c24f91e979b565564e1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 61
@@ -1502,7 +1522,7 @@ TilemapRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -3277,6 +3297,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 35.5
@@ -3334,6 +3358,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 17
@@ -3559,6 +3587,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 64
@@ -3624,6 +3656,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Patrol Enemy A
       objectReference: {fileID: 0}
+    - target: {fileID: 7268976880930146436, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 8015118938415093620, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 14
@@ -3721,6 +3757,14 @@ PrefabInstance:
       propertyPath: m_Name
       value: Goal
       objectReference: {fileID: 0}
+    - target: {fileID: 3224960647225023420, guid: c84577e31c191e64eaa721d65b65ca22, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+    - target: {fileID: 7232078502855600454, guid: c84577e31c191e64eaa721d65b65ca22, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -3738,6 +3782,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 13
@@ -3795,6 +3843,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 32
@@ -3864,6 +3916,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Patrol Enemy B
       objectReference: {fileID: 0}
+    - target: {fileID: 7268976880930146436, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 8015118938415093620, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 37.5
@@ -4000,6 +4056,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 3
@@ -4160,6 +4220,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Patrol Enemy C
       objectReference: {fileID: 0}
+    - target: {fileID: 7268976880930146436, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 8015118938415093620, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 21
@@ -4276,7 +4340,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
+  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -4316,6 +4380,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2671918189991885140, guid: f63cc774327c6284ea8ae5fa497b7043, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 6846733253241233184, guid: f63cc774327c6284ea8ae5fa497b7043, type: 3}
       propertyPath: m_Name
       value: Player
@@ -4393,6 +4461,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Chasing Enemy A
       objectReference: {fileID: 0}
+    - target: {fileID: 3878772234755551660, guid: 6cce15f4b9d87c24f91e979b565564e1, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 6607830605255775272, guid: 6cce15f4b9d87c24f91e979b565564e1, type: 3}
       propertyPath: m_LocalPosition.x
       value: 26
@@ -4450,6 +4522,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 49
@@ -4618,6 +4694,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 42.5
@@ -4675,6 +4755,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Star
       objectReference: {fileID: 0}
+    - target: {fileID: 7363813455939465985, guid: b5453b963eb07d34092a35747459eb45, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 9049384029689448731, guid: b5453b963eb07d34092a35747459eb45, type: 3}
       propertyPath: m_LocalPosition.x
       value: 22
@@ -4744,6 +4828,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Patrol Enemy E
       objectReference: {fileID: 0}
+    - target: {fileID: 7268976880930146436, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
     - target: {fileID: 8015118938415093620, guid: f4956e177c6e98e41aaec1e03476900c, type: 3}
       propertyPath: m_LocalPosition.x
       value: 56.5
