@@ -24,6 +24,15 @@ using UnityEngine;
         public event Action Died;
         // 무적 상태가 끝나는 시각을 저장하는 변수입니다.
         private float invulnerableUntil;
+        // 피해와 강제 사망 요청을 받아들일 수 있는지를 나타냅니다.
+        private bool damageEnabled = true;
+
+        /// <summary>외부 연출에서 플레이어의 피해 허용 상태를 변경합니다.</summary>
+        /// <param name="enabled">피해를 허용하려면 true, 차단하려면 false입니다.</param>
+        public void SetDamageEnabled(bool enabled)
+        {
+            damageEnabled = enabled;
+        }
 
         /// <summary>게임 시작 시 현재 체력을 최대 체력으로 초기화합니다.</summary>
         private void Awake()
@@ -49,7 +58,8 @@ using UnityEngine;
             bool alreadyDead = IsDead == true; // 대상이 이미 사망했는지 여부입니다.
             bool currentlyInvulnerable =
                 Time.time < invulnerableUntil; // 피해 후 무적 시간이 아직 남아 있는지 여부입니다.
-            if (invalidDamageAmount == true ||
+            if (damageEnabled == false ||
+                invalidDamageAmount == true ||
                 alreadyDead == true ||
                 currentlyInvulnerable == true)
             {
@@ -71,7 +81,7 @@ using UnityEngine;
         /// <returns>새롭게 사망 처리되었는지 여부입니다.</returns>
         public bool ForceDeath(Vector2 sourcePosition)
         {
-            if (IsDead == true)
+            if (damageEnabled == false || IsDead == true)
             {
                 return false;
             }

@@ -24,7 +24,8 @@ MonoBehaviour:
     probeSamplingDebugMesh: {fileID: 0}
     probeSamplingDebugTexture: {fileID: 0}
     probeVolumeBlendStatesCS: {fileID: 0}
-  m_RendererFeatures: []
+  m_RendererFeatures:
+  - {fileID: 2418923627055800047}
   m_RendererFeatureMap: 
   m_UseNativeRenderPass: 0
   m_LayerMask:
@@ -56,3 +57,17 @@ MonoBehaviour:
   m_PostProcessData: {fileID: 0}
   m_DefaultMaterialType: 0
   m_DefaultCustomMaterial: {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
+--- !u!114 &2418923627055800047
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b641573f58725564f8ba6b8a3cce16b6, type: 3}
+  m_Name: Binary Black White Renderer Feature
+  m_EditorClassIdentifier: 
+  m_Active: 1
+  effectMaterial: {fileID: 2100000, guid: 1f468b06a5161ed46bcbc4990b089568, type: 2}

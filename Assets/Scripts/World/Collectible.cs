@@ -21,6 +21,12 @@ using UnityEngine;
             {
                 audioFeedback.PlayCollectible();
             }
+            PlayerVfxFeedback vfxFeedback =
+                other.GetComponent<PlayerVfxFeedback>(); // Star 획득 파티클을 생성할 플레이어 시각 효과 컴포넌트입니다.
+            if (vfxFeedback != null)
+            {
+                vfxFeedback.PlayCollectibleEffect(transform.position);
+            }
             if (GameManager.Instance != null)
             {
                 GameManager.Instance.AddScore(value);

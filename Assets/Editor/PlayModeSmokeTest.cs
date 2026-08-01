@@ -19,6 +19,8 @@ public static class PlayModeSmokeTest
     private const string DamageCheckedKey = "AcademyPlatformer.DamageChecked";
     // 게임오버 검사 완료 상태를 저장할 세션 키입니다.
     private const string GameOverCheckedKey = "AcademyPlatformer.GameOverChecked";
+    // 지연된 게임오버 UI 검증 완료 상태를 저장할 세션 키입니다.
+    private const string DelayedGameOverCheckedKey = "AcademyPlatformer.DelayedGameOverChecked";
     // 밟기 검사 완료 상태를 저장할 세션 키입니다.
     private const string StompCheckedKey = "AcademyPlatformer.StompChecked";
     // 밟기 검사 준비 상태를 저장할 세션 키입니다.
@@ -42,6 +44,7 @@ public static class PlayModeSmokeTest
     }
 
     /// <summary>메인 씬을 열고 플레이 모드 자동 검사를 시작합니다.</summary>
+    [MenuItem("Tools/Academy Platformer/Run Play Mode Smoke Test")]
     public static void Run()
     {
         SessionState.SetBool(RunningKey, true);
@@ -49,6 +52,7 @@ public static class PlayModeSmokeTest
         SessionState.SetBool(BasicCheckedKey, false);
         SessionState.SetBool(DamageCheckedKey, false);
         SessionState.SetBool(GameOverCheckedKey, false);
+        SessionState.SetBool(DelayedGameOverCheckedKey, false);
         SessionState.SetBool(StompCheckedKey, false);
         SessionState.SetBool(StompSetupKey, false);
         SessionState.SetFloat(StartKey, (float)EditorApplication.timeSinceStartup);
@@ -94,6 +98,24 @@ public static class PlayModeSmokeTest
             {
                 SessionState.SetBool(FailedKey, true);
                 Debug.LogError("Player landing test failed: the player fell through the starting platform.");
+            }
+            PlayerVfxFeedback vfxFeedback =
+                player != null ? player.GetComponent<PlayerVfxFeedback>() : null; // 상황별 파티클 이펙트를 검증할 플레이어 컴포넌트입니다.
+            if (vfxFeedback == null)
+            {
+                SessionState.SetBool(FailedKey, true);
+                Debug.LogError("VFX setup test failed: PlayerVfxFeedback is missing.");
+            }
+            else
+            {
+                vfxFeedback.PlayCollectibleEffect(player.transform.position + Vector3.up);
+                ParticleSystem[] activeEffects =
+                    Object.FindObjectsByType<ParticleSystem>(FindObjectsSortMode.None); // 생성된 Star 획득 파티클입니다.
+                if (vfxFeedback.CollectibleEffectPlayCount < 1 || activeEffects.Length < 1)
+                {
+                    SessionState.SetBool(FailedKey, true);
+                    Debug.LogError("Collectible VFX test failed: the Star burst was not created.");
+                }
             }
             Animator playerAnimator = player != null ? player.GetComponentInChildren<Animator>() : null; // playerAnimator 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
             if (playerAnimator == null || player.GetComponent<PlayerAnimationController>() == null)
@@ -284,8 +306,11 @@ public static class PlayModeSmokeTest
                 ? (Vector2)player.transform.position + Vector2.right
                 : Vector2.zero;
             bool accepted = health != null && health.TakeDamage(1, source); // accepted 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
+            PlayerVfxFeedback vfxFeedback =
+                player != null ? player.GetComponent<PlayerVfxFeedback>() : null; // 피격 파티클 생성 횟수를 검증할 컴포넌트입니다.
             if (feedback == null || audioFeedback == null || accepted == false || body == null ||
-                body.linearVelocity.x >= -0.5f || sprite == null || sprite.enabled)
+                body.linearVelocity.x >= -0.5f || sprite == null || sprite.enabled ||
+                vfxFeedback == null || vfxFeedback.DamagedEffectPlayCount < 1)
             {
                 SessionState.SetBool(FailedKey, true);
                 Debug.LogError("Damage feedback test failed: knockback or invulnerability blinking is missing.");
@@ -312,12 +337,30 @@ public static class PlayModeSmokeTest
             bool accepted = fallDeathZone != null && playerCollider != null &&
                 fallDeathZone.TryKill(playerCollider); // 추락 사망 처리가 실제로 적용되었는지 여부입니다.
             if (accepted == false || GameManager.Instance == null ||
+                GameManager.Instance.GameEnded == true ||
+                hud == null || hud.EndScreenVisible == true ||
+                Mathf.Approximately(Time.timeScale, 1f) == false)
+            {
+                SessionState.SetBool(FailedKey, true);
+                Debug.LogError("Death-sequence test failed: Game Over appeared before the death presentation finished.");
+            }
+        }
+        if (EditorApplication.isPlaying == true && elapsed >= 6.7d &&
+            SessionState.GetBool(DelayedGameOverCheckedKey, false) == false)
+        {
+            SessionState.SetBool(DelayedGameOverCheckedKey, true);
+            GameHUD hud =
+                Object.FindFirstObjectByType<GameHUD>(); // 지연 표시가 끝났는지 확인할 게임 HUD입니다.
+            DeathScreenGrayscale grayscale =
+                Object.FindFirstObjectByType<DeathScreenGrayscale>(); // 화면 전체 흑백 연출의 현재 상태입니다.
+            if (GameManager.Instance == null ||
                 GameManager.Instance.GameEnded == false ||
                 hud == null || hud.EndScreenVisible == false ||
+                grayscale == null || grayscale.CurrentWeight < 0.99f ||
                 Mathf.Approximately(Time.timeScale, 0f) == false)
             {
                 SessionState.SetBool(FailedKey, true);
-                Debug.LogError("Game-over test failed: death must pause play and display the end screen.");
+                Debug.LogError("Game-over delay test failed: the end screen did not appear after the death presentation.");
             }
         }
         if (EditorApplication.isPlaying == true && elapsed >= 3.4d &&
@@ -372,13 +415,20 @@ public static class PlayModeSmokeTest
                 SessionState.SetBool(FailedKey, true);
                 Debug.LogError("Stomp audio test failed: a successful stomp did not play its sound.");
             }
+            PlayerVfxFeedback vfxFeedback =
+                player != null ? player.GetComponent<PlayerVfxFeedback>() : null; // 밟기 파티클 생성 횟수를 검증할 컴포넌트입니다.
+            if (vfxFeedback == null || vfxFeedback.StompEffectPlayCount < 1)
+            {
+                SessionState.SetBool(FailedKey, true);
+                Debug.LogError("Stomp VFX test failed: the impact burst was not created.");
+            }
         }
-        if (EditorApplication.isPlaying == true && elapsed >= 5d)
+        if (EditorApplication.isPlaying == true && elapsed >= 7.2d)
         {
             EditorApplication.ExitPlaymode();
             return;
         }
-        if (EditorApplication.isPlayingOrWillChangePlaymode == true || elapsed < 5d)
+        if (EditorApplication.isPlayingOrWillChangePlaymode == true || elapsed < 7.2d)
         {
             return;
         }

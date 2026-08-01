@@ -2,8 +2,12 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEditor.Animations;
+using UnityEditor.Events;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.EventSystems;
+using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
 using UnityEngine.Tilemaps;
 using UnityEngine.UI;
@@ -23,6 +27,8 @@ public static class SampleProjectBuilder
     private const string TileAssets = Root + "/Tiles";
     // 물리 머티리얼 경로를 저장하는 상수입니다.
     private const string Physics = Root + "/Physics";
+    // 자동 생성 이펙트 에셋 경로를 저장하는 상수입니다.
+    private const string Effects = Root + "/Effects";
     // 프리팹 경로를 저장하는 상수입니다.
     private const string Prefabs = Root + "/Prefabs";
     // 씬 경로를 저장하는 상수입니다.
@@ -41,7 +47,19 @@ public static class SampleProjectBuilder
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(Prefabs + "/Player.prefab"); // prefab 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
             SpriteRenderer renderer = prefab != null ? prefab.GetComponentInChildren<SpriteRenderer>() : null; // renderer 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
             Animator animator = prefab != null ? prefab.GetComponentInChildren<Animator>() : null; // animator 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
-            if (renderer != null && (renderer.sprite == null || animator == null || animator.runtimeAnimatorController == null))
+            PlayerDeathSequence deathSequence =
+                prefab != null ? prefab.GetComponent<PlayerDeathSequence>() : null; // 새 사망 연출이 프리팹에 적용됐는지 확인합니다.
+            PlayerClearSequence clearSequence =
+                prefab != null ? prefab.GetComponent<PlayerClearSequence>() : null; // 새 클리어 연출이 프리팹에 적용됐는지 확인합니다.
+            PlayerVfxFeedback vfxFeedback =
+                prefab != null ? prefab.GetComponent<PlayerVfxFeedback>() : null; // 상황별 플레이어 이펙트가 프리팹에 적용됐는지 확인합니다.
+            if (renderer != null &&
+                (renderer.sprite == null ||
+                animator == null ||
+                animator.runtimeAnimatorController == null ||
+                deathSequence == null ||
+                clearSequence == null ||
+                vfxFeedback == null))
             {
                 Debug.Log("Missing sprite references detected. Rebuilding Academy Platformer visuals...");
                 Build();
@@ -59,6 +77,7 @@ public static class SampleProjectBuilder
         EnsureFolder(Root, "Audio");
         EnsureFolder(Root, "Tiles");
         EnsureFolder(Root, "Physics");
+        EnsureFolder(Root, "Effects");
         EnsureFolder(Root, "Prefabs");
         EnsureFolder("Assets", "Scenes");
         EnsureGroundLayer();
@@ -70,25 +89,109 @@ public static class SampleProjectBuilder
             "Pink Man", "PatrolEnemy", 10f, 14f); // 순찰형 적의 애니메이션 묶음입니다.
         CharacterAnimationAssets chasingEnemyAnimations = CreateEnemyAnimations(
             "Virtual Guy", "ChasingEnemy", 10f, 14f); // 추적형 적의 애니메이션 묶음입니다.
+        CharacterAnimationAssets rangedEnemyAnimations = CreateEnemyAnimations(
+            "Ninja Frog", "RangedEnemy", 8f, 10f); // 원거리 적의 대기 애니메이션 묶음입니다.
         TerrainTiles terrainTiles = CreateTerrainTiles(); // terrainTiles 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         PhysicsMaterial2D frictionlessMaterial = CreateFrictionlessMaterial(); // frictionlessMaterial 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         AudioClip jumpClip = LoadRequiredAsset<AudioClip>(Audio + "/GameJump.wav"); // jumpClip 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         AudioClip collectClip = LoadRequiredAsset<AudioClip>(Audio + "/GameCollectStar.wav"); // collectClip 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         AudioClip damagedClip = LoadRequiredAsset<AudioClip>(Audio + "/GamePlayerDamaged.wav"); // damagedClip 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         AudioClip stompClip = LoadRequiredAsset<AudioClip>(Audio + "/GameEnemyStomp.wav"); // stompClip 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
+        Material particleMaterial = CreateParticleMaterial(); // URP에서 원샷 파티클을 표시할 공용 머티리얼입니다.
+        GameObject collectibleEffectPrefab = CreateParticleEffectPrefab(
+            "StarCollectEffect", particleMaterial,
+            new Color(1f, 0.92f, 0.2f), Color.white,
+            16, 0.5f, 2.2f, 4.8f, 0.13f, 0.24f, 0.15f); // Star 획득 시 퍼지는 금빛 이펙트입니다.
+        GameObject stompEffectPrefab = CreateParticleEffectPrefab(
+            "EnemyStompEffect", particleMaterial,
+            new Color(1f, 0.72f, 0.18f), new Color(1f, 0.95f, 0.75f),
+            12, 0.38f, 2.5f, 5f, 0.12f, 0.22f, 0.2f); // 적 밟기 시 퍼지는 충격 이펙트입니다.
+        GameObject damagedEffectPrefab = CreateParticleEffectPrefab(
+            "PlayerDamagedEffect", particleMaterial,
+            new Color(1f, 0.12f, 0.08f), new Color(1f, 0.55f, 0.12f),
+            14, 0.42f, 3f, 5.5f, 0.14f, 0.26f, 0.18f); // 플레이어 피격 시 퍼지는 붉은 이펙트입니다.
         GameObject playerPrefab = CreatePlayerPrefab( // playerPrefab 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
-            playerAnimations, frictionlessMaterial, jumpClip, collectClip, damagedClip, stompClip);
+            playerAnimations, frictionlessMaterial, jumpClip, collectClip, damagedClip, stompClip,
+            collectibleEffectPrefab, stompEffectPrefab, damagedEffectPrefab);
         GameObject patrolEnemyPrefab = CreatePatrolEnemyPrefab(patrolEnemyAnimations); // 순찰형 적 프리팹입니다.
         GameObject chasingEnemyPrefab = CreateChasingEnemyPrefab(
             chasingEnemyAnimations); // 추적형 적 프리팹입니다.
+        GameObject projectilePrefab = CreateEnemyProjectilePrefab(circle); // 느리게 이동하는 적 투사체 프리팹입니다.
+        GameObject rangedEnemyPrefab = CreateRangedEnemyPrefab(
+            rangedEnemyAnimations, projectilePrefab); // 투사체를 발사하는 원거리 적 프리팹입니다.
         GameObject starPrefab = CreateStarPrefab(circle); // starPrefab 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         GameObject goalPrefab = CreateGoalPrefab(square); // goalPrefab 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
-        BuildScene(playerPrefab, patrolEnemyPrefab, chasingEnemyPrefab,
+        BuildScene(playerPrefab, patrolEnemyPrefab, chasingEnemyPrefab, rangedEnemyPrefab,
             starPrefab, goalPrefab, terrainTiles);
+        MultiStageBuilder.BuildStageScenes();
+        TitleScreenBuilder.BuildTitleScene();
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
         Debug.Log("Academy Platformer sample rebuilt successfully.");
+    }
+
+    /// <summary>누락된 파티클 이펙트 세 종류를 다시 만들고 플레이어 프리팹에 연결합니다.</summary>
+    [MenuItem("Tools/Academy Platformer/Rebuild Player Effects")]
+    public static void RebuildPlayerEffects()
+    {
+        Material particleMaterial = CreateParticleMaterial();
+        GameObject collectibleEffectPrefab = CreateParticleEffectPrefab(
+            "StarCollectEffect",
+            particleMaterial,
+            new Color(1f, 0.92f, 0.2f),
+            Color.white,
+            16,
+            0.5f,
+            2.2f,
+            4.8f,
+            0.13f,
+            0.24f,
+            0.15f);
+        GameObject stompEffectPrefab = CreateParticleEffectPrefab(
+            "EnemyStompEffect",
+            particleMaterial,
+            new Color(1f, 0.72f, 0.18f),
+            new Color(1f, 0.95f, 0.75f),
+            12,
+            0.38f,
+            2.5f,
+            5f,
+            0.12f,
+            0.22f,
+            0.2f);
+        GameObject damagedEffectPrefab = CreateParticleEffectPrefab(
+            "PlayerDamagedEffect",
+            particleMaterial,
+            new Color(1f, 0.12f, 0.08f),
+            new Color(1f, 0.55f, 0.12f),
+            14,
+            0.42f,
+            3f,
+            5.5f,
+            0.14f,
+            0.26f,
+            0.18f);
+
+        string playerPrefabPath = Prefabs + "/Player.prefab";
+        GameObject playerRoot =
+            PrefabUtility.LoadPrefabContents(playerPrefabPath);
+        PlayerVfxFeedback vfxFeedback =
+            playerRoot.GetComponent<PlayerVfxFeedback>();
+        if (vfxFeedback != null)
+        {
+            vfxFeedback.Configure(
+                collectibleEffectPrefab,
+                stompEffectPrefab,
+                damagedEffectPrefab);
+            PrefabUtility.SaveAsPrefabAsset(
+                playerRoot,
+                playerPrefabPath);
+        }
+
+        PrefabUtility.UnloadPrefabContents(playerRoot);
+        AssetDatabase.SaveAssets();
+        Debug.Log("PLAYER_EFFECTS_REBUILT");
     }
 
     /// <summary>지정한 상위 폴더 안에 필요한 하위 폴더가 존재하도록 보장합니다.</summary>
@@ -501,6 +604,16 @@ public static class SampleProjectBuilder
         PaintFloatingPlatform(tilemap, tiles, 55, 58, -1);
         PaintFloatingPlatform(tilemap, tiles, 59, 61, 0);
         PaintFloatingPlatform(tilemap, tiles, 62, 66, 2);
+        PaintFloatingPlatform(tilemap, tiles, 66, 70, 5);
+        PaintFloatingPlatform(tilemap, tiles, 61, 65, 8);
+        PaintFloatingPlatform(tilemap, tiles, 67, 72, 11);
+        PaintFloatingPlatform(tilemap, tiles, 61, 65, 14);
+        PaintFloatingPlatform(tilemap, tiles, 66, 71, 17);
+        PaintFloatingPlatform(tilemap, tiles, 60, 65, 20);
+        PaintFloatingPlatform(tilemap, tiles, 66, 72, 23);
+        PaintFloatingPlatform(tilemap, tiles, 61, 65, 26);
+        PaintFloatingPlatform(tilemap, tiles, 66, 71, 29);
+        PaintFloatingPlatform(tilemap, tiles, 72, 79, 32);
         tilemap.CompressBounds();
         if (tilemap.GetUsedTilesCount() == 0)
         {
@@ -547,10 +660,139 @@ public static class SampleProjectBuilder
         }
     }
 
+    /// <summary>URP에서 세 종류의 파티클 이펙트가 함께 사용할 머티리얼을 생성합니다.</summary>
+    /// <returns>생성하거나 갱신한 파티클 머티리얼을 반환합니다.</returns>
+    private static Material CreateParticleMaterial()
+    {
+        // 파티클 머티리얼을 저장할 프로젝트 경로입니다.
+        string materialPath = Effects + "/VfxParticle.mat";
+
+        // URP에서 빛의 영향을 받지 않고 파티클을 표시할 셰이더입니다.
+        Shader particleShader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
+
+        if (particleShader == null)
+        {
+            throw new InvalidDataException("URP particle shader could not be found.");
+        }
+
+        // 기존에 생성되어 있는 공용 파티클 머티리얼입니다.
+        Material material = AssetDatabase.LoadAssetAtPath<Material>(materialPath);
+
+        if (material == null)
+        {
+            material = new Material(particleShader);
+            AssetDatabase.CreateAsset(material, materialPath);
+        }
+        else
+        {
+            material.shader = particleShader;
+            EditorUtility.SetDirty(material);
+        }
+
+        return material;
+    }
+
+    /// <summary>지정한 색상과 움직임을 사용하는 일회성 원형 파티클 프리팹을 생성합니다.</summary>
+    /// <param name="name">이펙트 에셋과 오브젝트에 사용할 이름입니다.</param>
+    /// <param name="material">파티클을 표시할 URP 머티리얼입니다.</param>
+    /// <param name="firstColor">무작위 색상 범위의 첫 번째 색상입니다.</param>
+    /// <param name="secondColor">무작위 색상 범위의 두 번째 색상입니다.</param>
+    /// <param name="particleCount">한 번에 방출할 파티클 개수입니다.</param>
+    /// <param name="lifeTime">각 파티클이 유지되는 시간입니다.</param>
+    /// <param name="minimumSpeed">파티클의 최소 이동 속도입니다.</param>
+    /// <param name="maximumSpeed">파티클의 최대 이동 속도입니다.</param>
+    /// <param name="minimumSize">파티클의 최소 크기입니다.</param>
+    /// <param name="maximumSize">파티클의 최대 크기입니다.</param>
+    /// <param name="radius">파티클이 처음 생성되는 원의 반지름입니다.</param>
+    /// <returns>저장된 일회성 파티클 프리팹을 반환합니다.</returns>
+    private static GameObject CreateParticleEffectPrefab(
+        string name,
+        Material material,
+        Color firstColor,
+        Color secondColor,
+        int particleCount,
+        float lifeTime,
+        float minimumSpeed,
+        float maximumSpeed,
+        float minimumSize,
+        float maximumSize,
+        float radius)
+    {
+        GameObject root = new(name); // 원샷 파티클 이펙트의 루트 오브젝트입니다.
+        ParticleSystem particleSystem =
+            root.AddComponent<ParticleSystem>(); // 파티클의 생성과 이동을 담당하는 컴포넌트입니다.
+        ParticleSystem.MainModule main = particleSystem.main; // 파티클의 공통 재생 설정입니다.
+        main.loop = false;
+        main.playOnAwake = true;
+        main.duration = 0.15f;
+        main.startLifetime = lifeTime;
+        main.startSpeed = new ParticleSystem.MinMaxCurve(minimumSpeed, maximumSpeed);
+        main.startSize = new ParticleSystem.MinMaxCurve(minimumSize, maximumSize);
+        main.startColor = new ParticleSystem.MinMaxGradient(firstColor, secondColor);
+        main.startRotation = new ParticleSystem.MinMaxCurve(-Mathf.PI, Mathf.PI);
+        main.gravityModifier = 0.35f;
+        main.simulationSpace = ParticleSystemSimulationSpace.World;
+        main.maxParticles = particleCount;
+        main.stopAction = ParticleSystemStopAction.Destroy;
+
+        ParticleSystem.EmissionModule emission =
+            particleSystem.emission; // 한 번에 방출할 파티클 수를 설정하는 모듈입니다.
+        emission.rateOverTime = 0f;
+        ParticleSystem.Burst burst =
+            new(0f, (short)particleCount); // 재생 시작 시 한 번만 발생하는 파티클 묶음입니다.
+        emission.SetBursts(new[] { burst });
+
+        ParticleSystem.ShapeModule shape =
+            particleSystem.shape; // 파티클이 원형으로 퍼져 나가게 하는 생성 모양입니다.
+        shape.enabled = true;
+        shape.shapeType = ParticleSystemShapeType.Circle;
+        shape.radius = radius;
+        shape.radiusThickness = 1f;
+
+        ParticleSystem.ColorOverLifetimeModule colorOverLifetime =
+            particleSystem.colorOverLifetime; // 수명이 끝날수록 파티클을 투명하게 만드는 모듈입니다.
+        colorOverLifetime.enabled = true;
+        Gradient fadeGradient = new(); // 파티클의 수명에 따른 색상과 투명도 곡선입니다.
+        fadeGradient.SetKeys(
+            new[]
+            {
+                new GradientColorKey(Color.white, 0f),
+                new GradientColorKey(Color.white, 1f)
+            },
+            new[]
+            {
+                new GradientAlphaKey(1f, 0f),
+                new GradientAlphaKey(1f, 0.55f),
+                new GradientAlphaKey(0f, 1f)
+            });
+        colorOverLifetime.color = fadeGradient;
+
+        ParticleSystem.SizeOverLifetimeModule sizeOverLifetime =
+            particleSystem.sizeOverLifetime; // 파티클이 사라질 때 크기도 줄이는 모듈입니다.
+        sizeOverLifetime.enabled = true;
+        AnimationCurve sizeCurve = new( // 파티클 크기가 빠르게 나타난 뒤 0으로 줄어드는 곡선입니다.
+            new Keyframe(0f, 0.25f),
+            new Keyframe(0.15f, 1f),
+            new Keyframe(1f, 0f));
+        sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(1f, sizeCurve);
+
+        ParticleSystemRenderer particleRenderer =
+            root.GetComponent<ParticleSystemRenderer>(); // 파티클의 화면 표시를 담당하는 렌더러입니다.
+        particleRenderer.material = material;
+        particleRenderer.sortingOrder = 8;
+
+        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(
+            root, Effects + "/" + name + ".prefab"); // 저장된 일회성 이펙트 프리팹입니다.
+        Object.DestroyImmediate(root);
+        return prefab;
+    }
+
     /// <summary>플레이어의 물리, 입력, 애니메이션, 전투와 사운드 컴포넌트를 포함한 프리팹을 생성합니다.</summary>
     private static GameObject CreatePlayerPrefab(CharacterAnimationAssets animations,
         PhysicsMaterial2D frictionlessMaterial, // frictionlessMaterial 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
-        AudioClip jumpClip, AudioClip collectClip, AudioClip damagedClip, AudioClip stompClip) // jumpClip 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
+        AudioClip jumpClip, AudioClip collectClip, AudioClip damagedClip, AudioClip stompClip,
+        GameObject collectibleEffectPrefab, GameObject stompEffectPrefab,
+        GameObject damagedEffectPrefab) // 상황별 플레이어 이펙트 프리팹입니다.
     {
         GameObject root = new("Player"); // root 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         root.tag = "Player";
@@ -582,11 +824,36 @@ public static class SampleProjectBuilder
         animationController.Configure(animator, sensor);
         PlayerDamageFeedback damageFeedback = root.AddComponent<PlayerDamageFeedback>(); // damageFeedback 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         damageFeedback.Configure(body, visual.GetComponent<SpriteRenderer>());
+        PlayerDeathSequence deathSequence =
+            root.AddComponent<PlayerDeathSequence>(); // 입력 차단과 캐릭터 사망 연출을 담당하는 컴포넌트입니다.
+        deathSequence.Configure(
+            body,
+            visual.GetComponent<SpriteRenderer>(),
+            root.GetComponent<PlayerInputReader>(),
+            root.GetComponent<PlayerMotor2D>(),
+            jump,
+            damageFeedback);
+        deathSequence.ConfigureTiming(2.2f, 1.15f);
+        PlayerClearSequence clearSequence =
+            root.AddComponent<PlayerClearSequence>(); // 승리 점프와 금빛 점멸을 담당하는 클리어 연출 컴포넌트입니다.
+        clearSequence.Configure(
+            body,
+            visual.GetComponent<SpriteRenderer>(),
+            root.GetComponent<PlayerInputReader>(),
+            root.GetComponent<PlayerMotor2D>(),
+            jump,
+            health);
         AudioSource audioSource = root.AddComponent<AudioSource>(); // audioSource 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         audioSource.playOnAwake = false;
         audioSource.spatialBlend = 0f;
         PlayerAudioFeedback audioFeedback = root.AddComponent<PlayerAudioFeedback>(); // audioFeedback 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         audioFeedback.Configure(jumpClip, collectClip, damagedClip, stompClip);
+        PlayerVfxFeedback vfxFeedback =
+            root.AddComponent<PlayerVfxFeedback>(); // 획득, 밟기와 피격 파티클을 생성하는 시각 효과 컴포넌트입니다.
+        vfxFeedback.Configure(
+            collectibleEffectPrefab,
+            stompEffectPrefab,
+            damagedEffectPrefab);
 
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(root, Prefabs + "/Player.prefab"); // prefab 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         Object.DestroyImmediate(root);
@@ -627,6 +894,60 @@ public static class SampleProjectBuilder
         chasingEnemy.Configure(7f, 1.5f, 3f);
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(
             root, Prefabs + "/ChasingEnemy.prefab"); // 저장된 추적형 적 프리팹입니다.
+        Object.DestroyImmediate(root);
+        return prefab;
+    }
+
+    /// <summary>플레이어가 점프로 피할 수 있는 느린 적 투사체 프리팹을 생성합니다.</summary>
+    /// <param name="sprite">투사체의 모습을 표현할 스프라이트입니다.</param>
+    /// <returns>저장된 적 투사체 프리팹을 반환합니다.</returns>
+    private static GameObject CreateEnemyProjectilePrefab(Sprite sprite)
+    {
+        GameObject root = new("Enemy Projectile"); // 적 투사체의 루트 오브젝트입니다.
+        Rigidbody2D body = root.AddComponent<Rigidbody2D>(); // 일정한 속도 이동에 사용할 물리 본체입니다.
+        body.bodyType = RigidbodyType2D.Kinematic;
+        body.gravityScale = 0f;
+        body.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+        CircleCollider2D collider = root.AddComponent<CircleCollider2D>(); // 피해 판정에 사용할 원형 트리거입니다.
+        collider.isTrigger = true;
+        collider.radius = 0.5f;
+        SpriteRenderer renderer = root.AddComponent<SpriteRenderer>(); // 투사체의 모습을 화면에 표시합니다.
+        renderer.sprite = sprite;
+        renderer.color = new Color(1f, 0.45f, 0.15f, 1f);
+        renderer.sortingOrder = 5;
+        root.transform.localScale = new Vector3(0.45f, 0.45f, 1f);
+        root.AddComponent<EnemyProjectileMovement>();
+        root.AddComponent<EnemyProjectileDamage>();
+        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(
+            root, Prefabs + "/EnemyProjectile.prefab"); // 저장된 적 투사체 프리팹입니다.
+        Object.DestroyImmediate(root);
+        return prefab;
+    }
+
+    /// <summary>제자리에서 주변을 살피다가 플레이어에게 투사체를 발사하는 적 프리팹을 생성합니다.</summary>
+    /// <param name="animations">원거리 적이 사용할 캐릭터 애니메이션 묶음입니다.</param>
+    /// <param name="projectilePrefab">원거리 적이 발사할 투사체 프리팹입니다.</param>
+    /// <returns>저장된 원거리 적 프리팹을 반환합니다.</returns>
+    private static GameObject CreateRangedEnemyPrefab(
+        CharacterAnimationAssets animations, GameObject projectilePrefab)
+    {
+        GameObject root = CreateEnemyBody("Ranged Enemy", animations); // 원거리 적의 루트 오브젝트입니다.
+        Rigidbody2D body = root.GetComponent<Rigidbody2D>(); // 원거리 적을 제자리에 고정할 물리 본체입니다.
+        body.constraints = RigidbodyConstraints2D.FreezePositionX |
+            RigidbodyConstraints2D.FreezeRotation;
+        SpriteRenderer renderer =
+            root.GetComponentInChildren<SpriteRenderer>(); // 바라보는 방향을 표시할 캐릭터 렌더러입니다.
+        RangedEnemyLookout lookout =
+            root.AddComponent<RangedEnemyLookout>(); // 두리번거리기와 플레이어 감지를 담당합니다.
+        lookout.Configure(7f, 2.5f, 1.4f, renderer);
+        GameObject firePointObject = new("Fire Point"); // 투사체가 시작되는 위치를 나타냅니다.
+        firePointObject.transform.SetParent(root.transform);
+        firePointObject.transform.localPosition = new Vector3(0f, 0.1f, 0f);
+        EnemyProjectileLauncher launcher =
+            root.AddComponent<EnemyProjectileLauncher>(); // 감지 결과에 따라 발사를 담당합니다.
+        launcher.Configure(projectilePrefab, firePointObject.transform, lookout, 2.4f, 0.6f);
+        GameObject prefab = PrefabUtility.SaveAsPrefabAsset(
+            root, Prefabs + "/RangedEnemy.prefab"); // 저장된 원거리 적 프리팹입니다.
         Object.DestroyImmediate(root);
         return prefab;
     }
@@ -688,7 +1009,7 @@ public static class SampleProjectBuilder
 
     /// <summary>모든 프리팹, 지형, 배경, UI를 배치해 메인 씬을 생성합니다.</summary>
     private static void BuildScene(GameObject playerPrefab, GameObject patrolEnemyPrefab,
-        GameObject chasingEnemyPrefab, GameObject starPrefab,
+        GameObject chasingEnemyPrefab, GameObject rangedEnemyPrefab, GameObject starPrefab,
         GameObject goalPrefab, TerrainTiles terrainTiles) // goalPrefab 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
     {
         Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single); // scene 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
@@ -701,6 +1022,8 @@ public static class SampleProjectBuilder
         camera.orthographicSize = 5.2f;
         camera.backgroundColor = new Color(0.08f, 0.12f, 0.22f);
         camera.transform.position = new Vector3(4f, 1.5f, -10f);
+        UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
+        cameraData.renderPostProcessing = true;
 
         CreateParallaxBackground(camera.transform);
         CreateTerrainTilemap(terrainTiles);
@@ -716,12 +1039,21 @@ public static class SampleProjectBuilder
         SpawnEnemy(patrolEnemyPrefab, "Patrol Enemy D", 34.7f, 4.8f, 34.5f, 36.8f, 1.3f);
         SpawnEnemy(patrolEnemyPrefab, "Patrol Enemy E", 56.5f, 0.8f, 55.5f, 57.5f, 1.5f);
         SpawnSpecialEnemy(chasingEnemyPrefab, "Chasing Enemy B", 61f, -2.2f);
+        SpawnSpecialEnemy(rangedEnemyPrefab, "Ranged Enemy A", 52f, -2.2f);
+        SpawnEnemy(patrolEnemyPrefab, "Vertical Patrol A", 68f, 5.8f, 66.5f, 69.5f, 1.35f);
+        SpawnEnemy(patrolEnemyPrefab, "Vertical Patrol B", 63f, 14.8f, 61.5f, 64.5f, 1.25f);
+        SpawnSpecialEnemy(rangedEnemyPrefab, "Vertical Ranged Enemy", 70f, 11.8f);
+        SpawnSpecialEnemy(chasingEnemyPrefab, "Vertical Chasing Enemy", 63f, 20.8f);
+        SpawnEnemy(patrolEnemyPrefab, "Summit Patrol", 75.5f, 32.8f, 73f, 78f, 1.4f);
 
         Vector2[] stars = // stars 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         {
             new(3f, -2f), new(8f, 1f), new(13f, 1f), new(17f, 2f),
             new(22f, 1f), new(27f, 1f), new(32f, 3f), new(35.5f, 5f),
-            new(42.5f, 2f), new(49f, 1f), new(53f, 2f), new(64f, 4f)
+            new(42.5f, 2f), new(49f, 1f), new(53f, 2f), new(64f, 4f),
+            new(68f, 7f), new(63f, 10f), new(70f, 13f), new(63f, 16f),
+            new(68.5f, 19f), new(62.5f, 22f), new(69f, 25f), new(63f, 28f),
+            new(68.5f, 31f), new(77.5f, 34f)
         };
         foreach (Vector2 position in stars)
         {
@@ -729,7 +1061,7 @@ public static class SampleProjectBuilder
             star.transform.position = position;
         }
         GameObject goal = (GameObject)PrefabUtility.InstantiatePrefab(goalPrefab); // goal 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
-        goal.transform.position = new Vector3(65f, 4.75f);
+        goal.transform.position = new Vector3(78f, 34.75f);
 
         GameObject killZone = new("Fall Kill Zone"); // killZone 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         killZone.transform.position = new Vector3(32f, -7f);
@@ -739,16 +1071,33 @@ public static class SampleProjectBuilder
         killZone.AddComponent<FallDeathZone>();
 
         GameManager manager = new GameObject("Game Manager").AddComponent<GameManager>();
-        manager.Configure(health, stars.Length);
+        manager.Configure(
+            health,
+            stars.Length,
+            player.GetComponent<PlayerDeathSequence>(),
+            player.GetComponent<PlayerClearSequence>());
         CameraFollow follow = camera.gameObject.AddComponent<CameraFollow>();
-        follow.Configure(player.transform, 0f, 64f);
+        follow.Configure(player.transform, 0f, 77f);
         CreateHud(health);
+        CreateDeathGrayscaleEffect();
 
         EditorSceneManager.SaveScene(scene, Scenes + "/Main.unity");
-        EditorBuildSettings.scenes = new[] { new EditorBuildSettingsScene(Scenes + "/Main.unity", true) };
+        EditorBuildSettings.scenes = new[]
+        {
+            new EditorBuildSettingsScene(Scenes + "/Title.unity", true),
+            new EditorBuildSettingsScene(Scenes + "/Main.unity", true)
+        };
         PlayerSettings.productName = "Academy Platformer Sample";
         PlayerSettings.companyName = "Game Academy";
         Selection.activeObject = player;
+    }
+
+    /// <summary>플레이어 사망 시 화면 전체를 흑백으로 만드는 전역 후처리 볼륨을 생성합니다.</summary>
+    private static void CreateDeathGrayscaleEffect()
+    {
+        GameObject effectObject = new("Death Screen Grayscale");
+        DeathScreenGrayscale grayscale = effectObject.AddComponent<DeathScreenGrayscale>();
+        grayscale.Configure(0.48f);
     }
 
     /// <summary>카메라 뒤에 세 개의 패럴랙스 배경 레이어를 생성합니다.</summary>
@@ -756,11 +1105,14 @@ public static class SampleProjectBuilder
     {
         GameObject root = new("Parallax Background"); // root 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         CreateParallaxLayer(root.transform, cameraTransform, "Far Sky",
-            "Assets/ThirdParty/MagicalRoad/Layers/back.png", new Vector3(32f, 0f, 0f), 0.05f, -30);
+            "Assets/ThirdParty/MagicalRoad/Layers/back.png",
+            new Vector3(32f, 0f, 0f), 0.05f, -30);
         CreateParallaxLayer(root.transform, cameraTransform, "Distant Forest",
-            "Assets/ThirdParty/MagicalRoad/Layers/middle.png", new Vector3(32f, -0.8f, 0f), 0.2f, -20);
+            "Assets/ThirdParty/MagicalRoad/Layers/middle.png",
+            new Vector3(32f, -0.8f, 0f), 0.2f, -20);
         CreateParallaxLayer(root.transform, cameraTransform, "Near Trees",
-            "Assets/ThirdParty/MagicalRoad/Layers/tree.png", new Vector3(32f, -1.6f, 0f), 0.4f, -10);
+            "Assets/ThirdParty/MagicalRoad/Layers/tree.png",
+            new Vector3(32f, -1.6f, 0f), 0.4f, -10);
     }
 
     /// <summary>배경 이미지 하나를 반복 배치하는 패럴랙스 레이어를 생성합니다.</summary>
@@ -798,7 +1150,19 @@ public static class SampleProjectBuilder
         renderer.tileMode = SpriteTileMode.Continuous;
         renderer.size = new Vector2(
             100f, sprite.bounds.size.y); // 가로 방향만 반복하고 세로 방향은 원본 이미지 높이를 유지합니다.
-        layer.AddComponent<ParallaxLayer>().Configure(cameraTransform, factor, true);
+        float verticalFactor = 1f;
+        if (name == "Distant Forest")
+        {
+            verticalFactor = 0.72f;
+        }
+        if (name == "Near Trees")
+        {
+            verticalFactor = 0.42f;
+        }
+        layer.AddComponent<ParallaxLayer>().Configure(
+            cameraTransform,
+            factor,
+            verticalFactor);
     }
 
     /// <summary>지정한 위치와 순찰 범위로 적 프리팹 인스턴스를 배치합니다.</summary>
@@ -846,9 +1210,19 @@ public static class SampleProjectBuilder
     /// <summary>상태 표시와 게임 종료 패널을 포함한 HUD를 생성합니다.</summary>
     private static void CreateHud(Health health)
     {
+        if (Object.FindFirstObjectByType<EventSystem>() == null)
+        {
+            GameObject eventSystemObject =
+                new GameObject("Event System"); // UI 버튼 입력을 처리할 이벤트 시스템 오브젝트입니다.
+            eventSystemObject.AddComponent<EventSystem>();
+            eventSystemObject.AddComponent<StandaloneInputModule>();
+        }
+
         GameObject canvasObject = new("HUD"); // canvasObject 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         Canvas canvas = canvasObject.AddComponent<Canvas>(); // canvas 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+        canvas.worldCamera = null;
+        canvas.sortingOrder = 100;
         canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
         canvasObject.AddComponent<GraphicRaycaster>();
         Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf"); // font 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
@@ -866,6 +1240,21 @@ public static class SampleProjectBuilder
         messageRect.anchorMax = new Vector2(1f, 0.18f);
         messageRect.offsetMin = messageRect.offsetMax = Vector2.zero;
 
+        GameObject fadeObject = new(
+            "Death Fade",
+            typeof(RectTransform),
+            typeof(Image)); // 사망 연출 중 화면을 천천히 어둡게 만드는 오브젝트입니다.
+        fadeObject.transform.SetParent(canvasObject.transform, false);
+        RectTransform fadeRect =
+            fadeObject.GetComponent<RectTransform>(); // 화면 전체를 덮는 페이드 이미지 영역입니다.
+        fadeRect.anchorMin = Vector2.zero;
+        fadeRect.anchorMax = Vector2.one;
+        fadeRect.offsetMin = fadeRect.offsetMax = Vector2.zero;
+        Image fadeImage =
+            fadeObject.GetComponent<Image>(); // 사망 화면 페이드에 사용할 이미지입니다.
+        fadeImage.color = new Color(0.02f, 0.01f, 0.04f, 0f);
+        fadeImage.raycastTarget = false;
+
         GameObject endScreen = new("Game Over Screen", typeof(RectTransform), typeof(Image)); // endScreen 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         endScreen.transform.SetParent(canvasObject.transform, false);
         RectTransform screenRect = endScreen.GetComponent<RectTransform>(); // screenRect 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
@@ -878,7 +1267,7 @@ public static class SampleProjectBuilder
         card.transform.SetParent(endScreen.transform, false);
         RectTransform cardRect = card.GetComponent<RectTransform>(); // cardRect 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
         cardRect.anchorMin = cardRect.anchorMax = new Vector2(0.5f, 0.5f);
-        cardRect.sizeDelta = new Vector2(620f, 280f);
+        cardRect.sizeDelta = new Vector2(860f, 390f);
         card.GetComponent<Image>().color = new Color(0.08f, 0.1f, 0.18f, 0.96f);
 
         Text endTitle = CreateText(card.transform, "Title", font, 64, TextAnchor.MiddleCenter); // endTitle 값을 이 처리 단계에서 사용하기 위해 저장하는 지역 변수입니다.
@@ -893,9 +1282,88 @@ public static class SampleProjectBuilder
         guideRect.anchorMax = new Vector2(1f, 0.45f);
         guideRect.offsetMin = guideRect.offsetMax = Vector2.zero;
 
+        Button restartButton = CreateHudButton(
+            card.transform,
+            "Restart Button",
+            "RESTART",
+            new Vector2(-270f, -125f),
+            font);
+        Button nextStageButton = CreateHudButton(
+            card.transform,
+            "Next Stage Button",
+            "NEXT STAGE",
+            new Vector2(0f, -125f),
+            font);
+        Button stageSelectButton = CreateHudButton(
+            card.transform,
+            "Stage Select Button",
+            "STAGE SELECT",
+            new Vector2(270f, -125f),
+            font);
+
         endScreen.SetActive(false);
         GameHUD hud = canvasObject.AddComponent<GameHUD>();
-        hud.Configure(health, status, message, endScreen, endTitle, endGuide);
+        hud.Configure(
+            health,
+            status,
+            message,
+            endScreen,
+            endTitle,
+            endGuide,
+            fadeImage,
+            restartButton,
+            nextStageButton,
+            stageSelectButton);
+        UnityEventTools.AddPersistentListener(
+            restartButton.onClick,
+            hud.RestartStage);
+        UnityEventTools.AddPersistentListener(
+            nextStageButton.onClick,
+            hud.GoToNextStage);
+        UnityEventTools.AddPersistentListener(
+            stageSelectButton.onClick,
+            hud.GoToStageSelect);
+    }
+
+    /// <summary>게임 종료 카드에서 사용할 이동 버튼 하나를 생성합니다.</summary>
+    /// <param name="parent">버튼이 소속될 카드 Transform입니다.</param>
+    /// <param name="name">버튼 오브젝트 이름입니다.</param>
+    /// <param name="label">버튼에 표시할 문구입니다.</param>
+    /// <param name="position">카드 중앙을 기준으로 한 버튼 위치입니다.</param>
+    /// <param name="font">버튼 문구에 사용할 글꼴입니다.</param>
+    private static Button CreateHudButton(
+        Transform parent,
+        string name,
+        string label,
+        Vector2 position,
+        Font font)
+    {
+        GameObject buttonObject = new(
+            name,
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+        RectTransform rect = buttonObject.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0.5f);
+        rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(230f, 64f);
+        buttonObject.GetComponent<Image>().color =
+            new Color(0.08f, 0.42f, 0.58f, 1f);
+
+        Text text = CreateText(
+            buttonObject.transform,
+            "Label",
+            font,
+            22,
+            TextAnchor.MiddleCenter);
+        text.text = label;
+        text.rectTransform.anchorMin = Vector2.zero;
+        text.rectTransform.anchorMax = Vector2.one;
+        text.rectTransform.offsetMin = Vector2.zero;
+        text.rectTransform.offsetMax = Vector2.zero;
+        return buttonObject.GetComponent<Button>();
     }
 
     /// <summary>지정한 부모 아래에 기본 UI 텍스트를 생성합니다.</summary>

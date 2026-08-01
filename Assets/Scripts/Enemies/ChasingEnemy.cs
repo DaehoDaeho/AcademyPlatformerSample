@@ -29,6 +29,8 @@ public sealed class ChasingEnemy : MonoBehaviour
     private float remainingPatrolTime;
     // 평상시 순찰할 수평 방향을 저장하는 변수입니다.
     private float patrolDirection = 1f;
+    // 추적형 적이 현재 바라보는 수평 방향을 저장하는 변수입니다.
+    private float facingDirection = 1f;
     // 이전 물리 프레임에 플레이어를 추적하고 있었는지 저장하는 변수입니다.
     private bool wasChasing;
 
@@ -36,6 +38,8 @@ public sealed class ChasingEnemy : MonoBehaviour
     public float PatrolSpeed => patrolSpeed;
     /// <summary>플레이어 추적 이동 속도를 제공합니다.</summary>
     public float ChaseSpeed => chaseSpeed;
+    /// <summary>추적형 적이 현재 바라보는 수평 방향을 제공합니다.</summary>
+    public float FacingDirection => facingDirection;
 
     /// <summary>감지 거리와 평상시 및 추적 이동 속도를 설정합니다.</summary>
     /// <param name="range">플레이어를 감지할 수평 거리입니다.</param>
@@ -98,9 +102,12 @@ public sealed class ChasingEnemy : MonoBehaviour
             Mathf.Abs(difference.x) <= detectionRange; // 플레이어가 수평 감지 거리 안에 있는지 여부입니다.
         bool withinVerticalRange =
             Mathf.Abs(difference.y) <= verticalTolerance; // 플레이어가 허용된 높이 차이 안에 있는지 여부입니다.
+        bool targetInFront =
+            difference.x * facingDirection > 0f; // 플레이어가 현재 바라보는 방향 앞쪽에 있는지 여부입니다.
         bool withinRange =
             withinHorizontalRange == true &&
-            withinVerticalRange == true; // 수평과 수직 감지 조건을 모두 만족하는지 여부입니다.
+            withinVerticalRange == true &&
+            targetInFront == true; // 거리, 높이와 정면 방향 조건을 모두 만족하는지 여부입니다.
         if (withinRange == false)
         {
             return false;
@@ -128,7 +135,7 @@ public sealed class ChasingEnemy : MonoBehaviour
             return;
         }
         body.linearVelocity = new Vector2(chaseDirection * chaseSpeed, body.linearVelocity.y);
-        transform.localScale = new Vector3(chaseDirection, 1f, 1f);
+        ApplyFacingDirection(chaseDirection);
     }
 
     /// <summary>설정된 이동 및 대기 시간을 번갈아 적용하며 평상시 순찰을 처리합니다.</summary>
@@ -158,7 +165,24 @@ public sealed class ChasingEnemy : MonoBehaviour
             return;
         }
         body.linearVelocity = new Vector2(patrolDirection * patrolSpeed, body.linearVelocity.y);
-        transform.localScale = new Vector3(patrolDirection, 1f, 1f);
+        ApplyFacingDirection(patrolDirection);
+    }
+
+    /// <summary>논리적인 시야 방향과 캐릭터의 좌우 방향을 함께 변경합니다.</summary>
+    /// <param name="direction">새로 바라볼 수평 방향입니다.</param>
+    private void ApplyFacingDirection(float direction)
+    {
+        if (direction >= 0f)
+        {
+            facingDirection = 1f;
+        }
+        else
+        {
+            facingDirection = -1f;
+        }
+
+        transform.localScale =
+            new Vector3(facingDirection, 1f, 1f);
     }
 
     /// <summary>수평 이동을 멈추고 평상시 순찰의 대기 단계로 전환합니다.</summary>

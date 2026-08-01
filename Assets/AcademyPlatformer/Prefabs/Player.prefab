@@ -105,7 +105,7 @@ SpriteRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 9dfc825aed78fcd4ba02077103263b40, type: 2}
+  - {fileID: 2100000, guid: a97c105638bdf8b4a8650670310a4cd3, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -177,8 +177,11 @@ GameObject:
   - component: {fileID: 600502100720813868}
   - component: {fileID: 9222050709885262485}
   - component: {fileID: 8491743968696211596}
+  - component: {fileID: 3188290339472963352}
+  - component: {fileID: 841373651814635268}
   - component: {fileID: 6868659937651759087}
   - component: {fileID: 4947589360884056062}
+  - component: {fileID: 4369274681265490559}
   m_Layer: 0
   m_Name: Player
   m_TagString: Player
@@ -371,6 +374,48 @@ MonoBehaviour:
   - {fileID: 2671918189991885140}
   knockbackVelocity: {x: 8, y: 7}
   blinkInterval: 0.08
+--- !u!114 &3188290339472963352
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6846733253241233184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5286a50ca5fd24d43b0f67e536161558, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceDuration: 2.2
+  upwardBounceSpeed: 6.5
+  flashInterval: 0.12
+  fadeStartTime: 1.15
+  body: {fileID: 5078922552171759510}
+  visualRenderer: {fileID: 2671918189991885140}
+  inputReader: {fileID: 4936963135353382241}
+  motor: {fileID: 4381418268822367985}
+  jump: {fileID: 3322248999940651785}
+  damageFeedback: {fileID: 8491743968696211596}
+--- !u!114 &841373651814635268
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6846733253241233184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7e68d082dee42f641a6124443d674d4f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sequenceDuration: 1.3
+  jumpHeight: 0.8
+  body: {fileID: 5078922552171759510}
+  visualRenderer: {fileID: 2671918189991885140}
+  inputReader: {fileID: 4936963135353382241}
+  motor: {fileID: 4381418268822367985}
+  jump: {fileID: 3322248999940651785}
+  health: {fileID: 9017625435992829094}
 --- !u!82 &6868659937651759087
 AudioSource:
   m_ObjectHideFlags: 0
@@ -484,3 +529,18 @@ MonoBehaviour:
   collectibleClip: {fileID: 8300000, guid: 0d8efe592ffa1fb4a9a0145b3b532c1e, type: 3}
   damagedClip: {fileID: 8300000, guid: 21ea41a003a21c04485564f4df45840e, type: 3}
   stompClip: {fileID: 8300000, guid: 6adccf601b370b943ad508dce1badce7, type: 3}
+--- !u!114 &4369274681265490559
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6846733253241233184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5d5df6b682e81a4499504d9acac65220, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  collectibleEffectPrefab: {fileID: 3872734401914783405, guid: 329da7254d6639047ad28b1f96a33e4a, type: 3}
+  stompEffectPrefab: {fileID: 9041962721691717321, guid: 022f99bdf66dbe543902b1827be4ae47, type: 3}
+  damagedEffectPrefab: {fileID: 2565445710884262410, guid: 280c27213aeffb940bbb4d13db842a3e, type: 3}

@@ -23,6 +23,14 @@ public static class Urp2DProjectConfigurator
     /// </summary>
     private const string PipelineAssetPath = SettingsFolderPath + "/AcademyURP2D.asset";
 
+    /// <summary>흰색과 검은색 이진화 머티리얼을 저장할 경로입니다.</summary>
+    private const string BinaryMaterialPath =
+        SettingsFolderPath + "/BinaryBlackWhite.mat";
+
+    /// <summary>흰색과 검은색 이진화 셰이더가 저장된 경로입니다.</summary>
+    private const string BinaryShaderPath =
+        "Assets/Shaders/BinaryBlackWhite.shader";
+
     /// <summary>
     /// 에디터가 스크립트를 다시 불러온 뒤 URP 2D 설정을 자동으로 적용합니다.
     /// </summary>
@@ -39,6 +47,7 @@ public static class Urp2DProjectConfigurator
     public static void ApplyUrp2DSettings()
     {
         EnsureSettingsFolderExists();
+        EnableRenderCompatibilityMode();
 
         // 프로젝트에 저장되어 있는 2D Renderer Data 에셋입니다.
         Renderer2DData rendererData =
@@ -48,6 +57,8 @@ public static class Urp2DProjectConfigurator
         {
             rendererData = CreateRendererData();
         }
+
+        EnsureBinaryBlackWhiteFeature(rendererData);
 
         // 프로젝트에 저장되어 있는 URP Pipeline 에셋입니다.
         UniversalRenderPipelineAsset pipelineAsset =
@@ -65,9 +76,68 @@ public static class Urp2DProjectConfigurator
         Debug.Log("URP 2D 렌더링 파이프라인 설정을 적용했습니다.");
     }
 
+    /// <summary>직관적인 호환 렌더 패스를 사용하도록 URP Render Graph를 비활성화합니다.</summary>
+    private static void EnableRenderCompatibilityMode()
+    {
+        RenderGraphSettings renderGraphSettings =
+            GraphicsSettings.GetRenderPipelineSettings<RenderGraphSettings>();
+        if (renderGraphSettings != null)
+        {
+            renderGraphSettings.enableRenderCompatibilityMode = true;
+        }
+    }
+
     /// <summary>
     /// URP 설정 에셋을 보관할 폴더가 없으면 새로 만듭니다.
     /// </summary>
+    /// <summary>2D Renderer에 순수 흰색·검은색 변환용 풀스크린 기능을 추가합니다.</summary>
+    /// <param name="rendererData">기능을 추가할 2D Renderer Data입니다.</param>
+    private static void EnsureBinaryBlackWhiteFeature(Renderer2DData rendererData)
+    {
+        Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(BinaryShaderPath);
+        if (shader == null)
+        {
+            return;
+        }
+
+        Material material =
+            AssetDatabase.LoadAssetAtPath<Material>(BinaryMaterialPath);
+        if (material == null)
+        {
+            material = new Material(shader);
+            material.name = "Binary Black White";
+            AssetDatabase.CreateAsset(material, BinaryMaterialPath);
+        }
+        else
+        {
+            material.shader = shader;
+        }
+
+        BinaryBlackWhiteRendererFeature feature = null;
+        foreach (ScriptableRendererFeature rendererFeature in rendererData.rendererFeatures)
+        {
+            if (rendererFeature is BinaryBlackWhiteRendererFeature binaryFeature)
+            {
+                feature = binaryFeature;
+                break;
+            }
+        }
+
+        if (feature == null)
+        {
+            feature = ScriptableObject.CreateInstance<BinaryBlackWhiteRendererFeature>();
+            feature.name = "Binary Black White Renderer Feature";
+            AssetDatabase.AddObjectToAsset(feature, rendererData);
+            rendererData.rendererFeatures.Add(feature);
+        }
+
+        feature.Configure(material);
+        EditorUtility.SetDirty(feature);
+        EditorUtility.SetDirty(material);
+        EditorUtility.SetDirty(rendererData);
+    }
+
+    /// <summary>URP 설정 에셋을 보관할 폴더가 없으면 새로 만듭니다.</summary>
     private static void EnsureSettingsFolderExists()
     {
         // URP 설정 폴더가 이미 존재하는지를 나타냅니다.

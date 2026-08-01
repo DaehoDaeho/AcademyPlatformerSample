@@ -11,7 +11,9 @@ using UnityEngine;
         // 카메라 이동량에 적용할 패럴랙스 계수를 저장하는 변수입니다.
         [SerializeField, Range(0f, 1f)] private float movementFactor = 0.2f;
         // 세로 방향에서 카메라와 같은 거리만큼 이동할지 저장하는 변수입니다.
-        [SerializeField] private bool followVertical;
+        [SerializeField, Range(0f, 1f)] private float verticalFollowFactor = 1f;
+        // 이전 씬 데이터와의 호환을 위해 남겨 둔 세로 고정 추적 값입니다.
+        private bool followVertical;
 
         /// <summary>현재 패럴랙스 이동 계수를 제공합니다.</summary>
         public float MovementFactor => movementFactor;
@@ -24,11 +26,14 @@ using UnityEngine;
         /// <param name="targetCamera">기준으로 사용할 카메라 Transform입니다.</param>
         /// <param name="factor">카메라의 수평 이동량에 적용할 패럴랙스 계수입니다.</param>
         /// <param name="vertical">배경을 카메라와 같은 세로 이동량으로 추적할지 여부입니다.</param>
-        public void Configure(Transform targetCamera, float factor, bool vertical = false)
+        public void Configure(
+            Transform targetCamera,
+            float factor,
+            float verticalFactor = 1f)
         {
             cameraTransform = targetCamera;
             movementFactor = Mathf.Clamp01(factor);
-            followVertical = vertical;
+            verticalFollowFactor = Mathf.Clamp01(verticalFactor);
         }
 
         /// <summary>카메라와 레이어의 시작 위치를 기록합니다.</summary>
@@ -64,6 +69,7 @@ using UnityEngine;
                 // Y축에는 패럴랙스 비율을 적용하지 않고 카메라와 같은 거리만큼 이동합니다.
                 y = layerStart.y + cameraDelta.y;
             }
+            y = layerStart.y + cameraDelta.y * verticalFollowFactor;
             transform.position = new Vector3(
                 layerStart.x + cameraDelta.x * followFactor,
                 y,
