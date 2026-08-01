@@ -47,6 +47,11 @@ public sealed class PlayerVfxFeedback : MonoBehaviour
     public int DamagedEffectPlayCount { get; private set; }
 
     /// <summary>
+    /// 투사체 충돌 이펙트를 생성한 횟수입니다.
+    /// </summary>
+    public int ProjectileImpactEffectPlayCount { get; private set; }
+
+    /// <summary>
     /// 생성 코드에서 세 종류의 이펙트 프리팹을 설정합니다.
     /// </summary>
     /// <param name="collectibleEffect">Star 획득 이펙트 프리팹입니다.</param>
@@ -116,6 +121,83 @@ public sealed class PlayerVfxFeedback : MonoBehaviour
 
         Instantiate(collectibleEffectPrefab, worldPosition, Quaternion.identity);
         CollectibleEffectPlayCount++;
+    }
+
+    /// <summary>
+    /// 투사체가 닿은 위치에 피격 스파크 이펙트를 생성합니다.
+    /// </summary>
+    /// <param name="worldPosition">투사체가 플레이어와 충돌한 월드 위치입니다.</param>
+    public void PlayProjectileImpactEffect(Vector3 worldPosition)
+    {
+        if (damagedEffectPrefab == null)
+        {
+            return;
+        }
+
+        Instantiate(damagedEffectPrefab, worldPosition, Quaternion.identity);
+        ProjectileImpactEffectPlayCount++;
+    }
+
+    /// <summary>
+    /// 적과 충돌한 위치에 일반 또는 강한 접촉 피격 이펙트를 생성합니다.
+    /// </summary>
+    /// <param name="worldPosition">적과 플레이어가 충돌한 월드 위치입니다.</param>
+    /// <param name="powerfulImpact">대시형 적의 강한 충돌이면 true입니다.</param>
+    public void PlayEnemyCollisionEffect(
+        Vector3 worldPosition,
+        bool powerfulImpact)
+    {
+        if (damagedEffectPrefab == null)
+        {
+            return;
+        }
+
+        if (powerfulImpact == false)
+        {
+            CreateScaledDamagedEffect(worldPosition, 0.85f);
+            return;
+        }
+
+        CreateScaledDamagedEffect(worldPosition, 1.65f);
+        CreateScaledDamagedEffect(
+            worldPosition + new Vector3(-0.28f, 0.18f, 0f),
+            1.05f);
+        CreateScaledDamagedEffect(
+            worldPosition + new Vector3(0.28f, -0.12f, 0f),
+            1.05f);
+    }
+
+    /// <summary>
+    /// 가시에 닿은 위치에 날카롭게 퍼지는 피격 이펙트를 생성합니다.
+    /// </summary>
+    /// <param name="worldPosition">플레이어가 가시에 닿은 월드 위치입니다.</param>
+    public void PlaySpikeCollisionEffect(Vector3 worldPosition)
+    {
+        if (damagedEffectPrefab == null)
+        {
+            return;
+        }
+
+        CreateScaledDamagedEffect(worldPosition, 1.15f);
+        CreateScaledDamagedEffect(
+            worldPosition + Vector3.up * 0.22f,
+            0.7f);
+    }
+
+    /// <summary>
+    /// 지정한 위치와 크기로 공용 피격 이펙트 프리팹을 생성합니다.
+    /// </summary>
+    /// <param name="worldPosition">이펙트를 생성할 월드 위치입니다.</param>
+    /// <param name="effectScale">이펙트에 적용할 크기 배율입니다.</param>
+    private void CreateScaledDamagedEffect(
+        Vector3 worldPosition,
+        float effectScale)
+    {
+        GameObject effectObject = Instantiate(
+            damagedEffectPrefab,
+            worldPosition,
+            Quaternion.identity);
+        effectObject.transform.localScale = Vector3.one * effectScale;
     }
 
     /// <summary>

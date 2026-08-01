@@ -126,6 +126,7 @@ GameObject:
   - component: {fileID: 2877575578037071221}
   - component: {fileID: 3300200916849367881}
   - component: {fileID: 8544778922382195210}
+  - component: {fileID: 8804035268628858164}
   m_Layer: 0
   m_Name: ChasingEnemy
   m_TagString: Untagged
@@ -294,6 +295,19 @@ MonoBehaviour:
   detectionRange: 7
   verticalTolerance: 2
   patrolSpeed: 1.5
-  chaseSpeed: 3
+  chaseSpeed: 5.2
   patrolDuration: 1.6
   pauseDuration: 1
+--- !u!114 &8804035268628858164
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3329618420016603643}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a03d701e73341d845abad95bb0de20d1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  dustMaterial: {fileID: 2100000, guid: bf674fe22715e6741ad1749c461207a5, type: 2}

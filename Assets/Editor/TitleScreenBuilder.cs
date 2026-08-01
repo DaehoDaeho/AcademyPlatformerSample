@@ -95,53 +95,77 @@ public static class TitleScreenBuilder
         Image background = CreateImage(
             canvas.transform,
             "Background",
-            new Color(0.025f, 0.055f, 0.12f, 1f),
+            new Color(0.025f, 0.045f, 0.09f, 1f),
             Vector2.zero,
             Vector2.one);
         StageSelectScreenController screenController =
             background.gameObject.AddComponent<StageSelectScreenController>();
 
+        CreateWorldMapLayers(background.transform);
+        CreateImage(
+            background.transform,
+            "Map Dark Overlay",
+            new Color(0.015f, 0.03f, 0.07f, 0.42f),
+            Vector2.zero,
+            Vector2.one);
+
         CreateText(
             background.transform,
             "Title",
-            "SELECT STAGE",
-            new Vector2(0.5f, 0.84f),
+            "WORLD MAP",
+            new Vector2(0.5f, 0.9f),
             new Vector2(900f, 120f),
             58,
             Color.white);
         CreateText(
             background.transform,
             "Progress Guide",
-            "이전 스테이지를 클리어하면 다음 스테이지가 해금됩니다",
-            new Vector2(0.5f, 0.74f),
+            "모험할 지역을 선택하세요",
+            new Vector2(0.5f, 0.82f),
             new Vector2(900f, 50f),
             23,
             new Color(0.62f, 0.8f, 0.92f));
 
-        CreateStageCard(
+        Vector2 firstAnchor = new Vector2(0.22f, 0.38f);
+        Vector2 secondAnchor = new Vector2(0.5f, 0.59f);
+        Vector2 thirdAnchor = new Vector2(0.78f, 0.4f);
+        CreatePathSegment(
+            background.transform,
+            "Forest To Twilight Path",
+            firstAnchor,
+            secondAnchor,
+            new Color(0.94f, 0.78f, 0.34f, 0.9f));
+        CreatePathSegment(
+            background.transform,
+            "Twilight To Summit Path",
+            secondAnchor,
+            thirdAnchor,
+            new Color(0.94f, 0.78f, 0.34f, 0.9f));
+
+        CreateStageNode(
             background.transform,
             1,
             "SNOW FOREST",
-            new Vector2(0.22f, 0.48f),
+            firstAnchor,
             new Color(0.1f, 0.46f, 0.62f));
-        CreateStageCard(
+        CreateStageNode(
             background.transform,
             2,
             "VIOLET TWILIGHT",
-            new Vector2(0.5f, 0.48f),
+            secondAnchor,
             new Color(0.42f, 0.2f, 0.62f));
-        CreateStageCard(
+        CreateStageNode(
             background.transform,
             3,
             "CRIMSON SUMMIT",
-            new Vector2(0.78f, 0.48f),
+            thirdAnchor,
             new Color(0.68f, 0.2f, 0.16f));
 
         Button backButton = CreateMenuButton(
             background.transform,
             "Back Button",
             "BACK TO TITLE",
-            new Vector2(0.5f, 0.15f),
+            new Vector2(0.5f, 0.11f),
             new Vector2(360f, 70f),
             new Color(0.12f, 0.3f, 0.42f));
         UnityEventTools.AddPersistentListener(
@@ -156,38 +180,200 @@ public static class TitleScreenBuilder
             "Assets/Scenes/StageSelect.unity");
     }
 
-    /// <summary>스테이지의 콘셉트와 잠금 상태를 표시하는 카드 버튼을 생성합니다.</summary>
-    /// <param name="parent">카드가 소속될 부모입니다.</param>
-    /// <param name="stageNumber">카드가 나타낼 스테이지 번호입니다.</param>
-    /// <param name="conceptName">스테이지 콘셉트 이름입니다.</param>
-    /// <param name="anchor">화면에서 카드가 위치할 앵커입니다.</param>
-    /// <param name="color">해금된 카드의 기본 색상입니다.</param>
-    private static void CreateStageCard(
+    /// <summary>오버월드 위에 스테이지 번호, 지역명과 진행 상태가 표시되는 원형 노드를 생성합니다.</summary>
+    /// <param name="parent">노드가 소속될 월드 맵입니다.</param>
+    /// <param name="stageNumber">노드가 나타낼 스테이지 번호입니다.</param>
+    /// <param name="conceptName">스테이지 지역 이름입니다.</param>
+    /// <param name="anchor">화면에서 노드가 위치할 앵커입니다.</param>
+    /// <param name="color">해금된 노드의 고유 색상입니다.</param>
+    private static void CreateStageNode(
         Transform parent,
         int stageNumber,
         string conceptName,
         Vector2 anchor,
         Color color)
     {
-        Button button = CreateMenuButton(
+        Sprite circleSprite = AssetDatabase.LoadAssetAtPath<Sprite>(
+            "Assets/AcademyPlatformer/Art/Circle.png");
+        Image halo = CreateAnchoredSpriteImage(
             parent,
-            "Stage " + stageNumber + " Button",
-            string.Empty,
+            "Stage " + stageNumber + " Halo",
+            circleSprite,
             anchor,
-            new Vector2(430f, 330f),
-            color);
-        Text label = button.GetComponentInChildren<Text>();
-        label.fontSize = 32;
+            new Vector2(196f, 196f),
+            new Color(color.r, color.g, color.b, 0.3f));
+        halo.raycastTarget = false;
+
+        GameObject buttonObject = new GameObject(
+            "Stage " + stageNumber + " Node",
+            typeof(RectTransform),
+            typeof(Image),
+            typeof(Button));
+        buttonObject.transform.SetParent(parent, false);
+        RectTransform buttonRect =
+            buttonObject.GetComponent<RectTransform>();
+        buttonRect.anchorMin = anchor;
+        buttonRect.anchorMax = anchor;
+        buttonRect.sizeDelta = new Vector2(154f, 154f);
+        Image nodeImage = buttonObject.GetComponent<Image>();
+        nodeImage.sprite = circleSprite;
+        nodeImage.color = color;
+        Button button = buttonObject.GetComponent<Button>();
+        ColorBlock buttonColors = button.colors;
+        buttonColors.highlightedColor = Color.Lerp(color, Color.white, 0.25f);
+        buttonColors.pressedColor = Color.Lerp(color, Color.black, 0.2f);
+        button.colors = buttonColors;
+
+        Text label = CreateText(
+            buttonObject.transform,
+            "Stage Number",
+            stageNumber.ToString(),
+            new Vector2(0.5f, 0.5f),
+            new Vector2(150f, 150f),
+            58,
+            Color.white);
+        Text conceptLabel = CreateText(
+            parent,
+            "Stage " + stageNumber + " Region Name",
+            conceptName,
+            new Vector2(anchor.x, anchor.y - 0.12f),
+            new Vector2(360f, 50f),
+            25,
+            Color.white);
+        conceptLabel.fontStyle = FontStyle.Bold;
+        Text statusLabel = CreateText(
+            parent,
+            "Stage " + stageNumber + " Status",
+            string.Empty,
+            new Vector2(anchor.x, anchor.y - 0.17f),
+            new Vector2(280f, 42f),
+            19,
+            Color.white);
+        GameObject lockObject = CreateText(
+            buttonObject.transform,
+            "Lock Icon",
+            "LOCK",
+            new Vector2(0.5f, 0.26f),
+            new Vector2(110f, 35f),
+            17,
+            new Color(0.82f, 0.86f, 0.92f, 1f)).gameObject;
         StageSelectButton stageButton =
             button.gameObject.AddComponent<StageSelectButton>();
         stageButton.Configure(
             stageNumber,
             button,
             label,
-            conceptName);
+            conceptName,
+            nodeImage,
+            statusLabel,
+            lockObject,
+            color);
         UnityEventTools.AddPersistentListener(
             button.onClick,
             stageButton.EnterStage);
+    }
+
+    /// <summary>Magical Road의 세 배경 레이어를 오버월드 지도 배경으로 겹쳐 배치합니다.</summary>
+    /// <param name="parent">배경 레이어가 소속될 부모입니다.</param>
+    private static void CreateWorldMapLayers(Transform parent)
+    {
+        CreateFullScreenSpriteImage(
+            parent,
+            "World Sky",
+            "Assets/ThirdParty/MagicalRoad/Layers/back.png",
+            new Color(0.52f, 0.7f, 0.88f, 1f));
+        CreateFullScreenSpriteImage(
+            parent,
+            "World Mountains",
+            "Assets/ThirdParty/MagicalRoad/Layers/middle.png",
+            new Color(0.62f, 0.76f, 0.82f, 0.82f));
+        CreateFullScreenSpriteImage(
+            parent,
+            "World Forest",
+            "Assets/ThirdParty/MagicalRoad/Layers/tree.png",
+            new Color(0.72f, 0.8f, 0.74f, 0.72f));
+    }
+
+    /// <summary>두 스테이지 노드 사이를 연결하는 굵은 오버월드 경로를 생성합니다.</summary>
+    /// <param name="parent">경로가 소속될 월드 맵입니다.</param>
+    /// <param name="name">경로 오브젝트 이름입니다.</param>
+    /// <param name="startAnchor">경로 시작 앵커입니다.</param>
+    /// <param name="endAnchor">경로 끝 앵커입니다.</param>
+    /// <param name="color">경로 표시 색상입니다.</param>
+    private static void CreatePathSegment(
+        Transform parent,
+        string name,
+        Vector2 startAnchor,
+        Vector2 endAnchor,
+        Color color)
+    {
+        Vector2 referenceSize = new Vector2(1920f, 1080f);
+        Vector2 startPosition =
+            Vector2.Scale(startAnchor - new Vector2(0.5f, 0.5f), referenceSize);
+        Vector2 endPosition =
+            Vector2.Scale(endAnchor - new Vector2(0.5f, 0.5f), referenceSize);
+        Vector2 difference = endPosition - startPosition;
+        Image pathImage = CreateImage(
+            parent,
+            name,
+            color,
+            new Vector2(0.5f, 0.5f),
+            new Vector2(0.5f, 0.5f));
+        RectTransform pathRect = pathImage.rectTransform;
+        pathRect.anchoredPosition = (startPosition + endPosition) * 0.5f;
+        pathRect.sizeDelta = new Vector2(difference.magnitude, 22f);
+        float angle = Mathf.Atan2(difference.y, difference.x) * Mathf.Rad2Deg;
+        pathRect.localRotation = Quaternion.Euler(0f, 0f, angle);
+        pathImage.raycastTarget = false;
+    }
+
+    /// <summary>프로젝트 경로의 스프라이트를 화면 전체에 표시하는 UI 이미지를 생성합니다.</summary>
+    /// <param name="parent">이미지가 소속될 부모입니다.</param>
+    /// <param name="name">이미지 오브젝트 이름입니다.</param>
+    /// <param name="spritePath">불러올 스프라이트 경로입니다.</param>
+    /// <param name="color">스프라이트에 곱할 색상입니다.</param>
+    private static void CreateFullScreenSpriteImage(
+        Transform parent,
+        string name,
+        string spritePath,
+        Color color)
+    {
+        Sprite sprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+        Image image = CreateImage(
+            parent,
+            name,
+            color,
+            Vector2.zero,
+            Vector2.one);
+        image.sprite = sprite;
+        image.preserveAspect = false;
+        image.raycastTarget = false;
+    }
+
+    /// <summary>지정한 앵커와 크기에 스프라이트 UI 이미지를 생성합니다.</summary>
+    /// <param name="parent">이미지가 소속될 부모입니다.</param>
+    /// <param name="name">이미지 오브젝트 이름입니다.</param>
+    /// <param name="sprite">표시할 스프라이트입니다.</param>
+    /// <param name="anchor">이미지 중심 앵커입니다.</param>
+    /// <param name="size">이미지 크기입니다.</param>
+    /// <param name="color">이미지 색상입니다.</param>
+    private static Image CreateAnchoredSpriteImage(
+        Transform parent,
+        string name,
+        Sprite sprite,
+        Vector2 anchor,
+        Vector2 size,
+        Color color)
+    {
+        Image image = CreateImage(
+            parent,
+            name,
+            color,
+            anchor,
+            anchor);
+        image.rectTransform.sizeDelta = size;
+        image.sprite = sprite;
+        return image;
     }
 
     /// <summary>스테이지 선택 화면에서 공통으로 사용할 메뉴 버튼을 생성합니다.</summary>

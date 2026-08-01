@@ -21,7 +21,25 @@ public sealed class EnemyProjectileDamage : MonoBehaviour
 
         if (targetHealth != null)
         {
-            targetHealth.TakeDamage(damage, transform.position);
+            // 무적 상태가 아닐 때 실제로 피해가 적용되었는지를 나타냅니다.
+            bool damageApplied =
+                targetHealth.TakeDamage(damage, transform.position);
+
+            if (damageApplied == true)
+            {
+                // 충돌한 플레이어가 가진 시각 효과 처리 컴포넌트입니다.
+                PlayerVfxFeedback vfxFeedback =
+                    other.GetComponentInParent<PlayerVfxFeedback>();
+
+                if (vfxFeedback != null)
+                {
+                    // 플레이어 콜라이더 표면에서 투사체와 가장 가까운 충돌 위치입니다.
+                    Vector2 impactPosition =
+                        other.ClosestPoint(transform.position);
+                    vfxFeedback.PlayProjectileImpactEffect(impactPosition);
+                }
+            }
+
             Destroy(gameObject);
             return;
         }

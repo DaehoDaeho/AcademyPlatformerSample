@@ -891,7 +891,10 @@ public static class SampleProjectBuilder
         GameObject root = CreateEnemyBody("Chasing Enemy", animations); // 추적형 적의 루트 오브젝트입니다.
         root.AddComponent<EnemyNavigationSensor>();
         ChasingEnemy chasingEnemy = root.AddComponent<ChasingEnemy>(); // 순찰과 시야 기반 추적을 담당하는 행동 컴포넌트입니다.
-        chasingEnemy.Configure(7f, 1.5f, 3f);
+        chasingEnemy.Configure(7f, 1.5f, 5.2f);
+        EnemyDashDust dashDust =
+            root.AddComponent<EnemyDashDust>(); // 질주 중 발밑 먼지를 담당하는 컴포넌트입니다.
+        dashDust.Configure(CreateParticleMaterial());
         GameObject prefab = PrefabUtility.SaveAsPrefabAsset(
             root, Prefabs + "/ChasingEnemy.prefab"); // 저장된 추적형 적 프리팹입니다.
         Object.DestroyImmediate(root);

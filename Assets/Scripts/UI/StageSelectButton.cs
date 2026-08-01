@@ -12,6 +12,14 @@ public sealed class StageSelectButton : MonoBehaviour
     [SerializeField] private Text labelText;
     // 스테이지별 콘셉트를 설명하는 문구입니다.
     [SerializeField] private string conceptName;
+    // 오버월드 노드의 현재 상태 색상을 표시할 이미지입니다.
+    [SerializeField] private Image nodeImage;
+    // 스테이지의 클리어, 도전 가능 또는 잠금 상태를 표시할 문구입니다.
+    [SerializeField] private Text statusText;
+    // 잠긴 스테이지 위에 표시할 자물쇠 문구 오브젝트입니다.
+    [SerializeField] private GameObject lockObject;
+    // 스테이지가 해금됐을 때 노드에 사용할 고유 색상입니다.
+    [SerializeField] private Color unlockedColor = Color.white;
 
     /// <summary>저장된 진행도를 읽어 버튼의 잠금 상태를 표시합니다.</summary>
     private void Start()
@@ -19,15 +27,31 @@ public sealed class StageSelectButton : MonoBehaviour
         bool isUnlocked =
             StageProgressData.IsStageUnlocked(stageNumber);
         button.interactable = isUnlocked;
+        bool isCleared =
+            StageProgressData.IsStageCleared(stageNumber);
         if (isUnlocked == true)
         {
             labelText.text =
-                "STAGE " + stageNumber + "\n" + conceptName;
+                stageNumber.ToString();
+            nodeImage.color = isCleared == true
+                ? new Color(0.18f, 0.78f, 0.42f, 1f)
+                : unlockedColor;
+            statusText.text = isCleared == true
+                ? "CLEARED"
+                : "AVAILABLE";
+            statusText.color = isCleared == true
+                ? new Color(0.55f, 1f, 0.68f, 1f)
+                : new Color(1f, 0.9f, 0.45f, 1f);
+            lockObject.SetActive(false);
         }
         else
         {
             labelText.text =
-                "STAGE " + stageNumber + "\nLOCKED";
+                stageNumber.ToString();
+            nodeImage.color = new Color(0.18f, 0.2f, 0.24f, 0.92f);
+            statusText.text = "LOCKED";
+            statusText.color = new Color(0.62f, 0.66f, 0.72f, 1f);
+            lockObject.SetActive(true);
         }
     }
 
@@ -52,11 +76,19 @@ public sealed class StageSelectButton : MonoBehaviour
         int number,
         Button targetButton,
         Text label,
-        string concept)
+        string concept,
+        Image icon,
+        Text status,
+        GameObject lockIcon,
+        Color stageColor)
     {
         stageNumber = number;
         button = targetButton;
         labelText = label;
         conceptName = concept;
+        nodeImage = icon;
+        statusText = status;
+        lockObject = lockIcon;
+        unlockedColor = stageColor;
     }
 }

@@ -86,6 +86,25 @@ using UnityEngine;
             Play(collectibleClip);
         }
 
+        /// <summary>적 접촉 종류에 따라 일반 또는 강한 충돌음을 겹쳐 재생합니다.</summary>
+        /// <param name="powerfulImpact">대시형 적의 강한 충돌이면 true입니다.</param>
+        public void PlayEnemyCollision(bool powerfulImpact)
+        {
+            if (powerfulImpact == true)
+            {
+                PlayPitchedImpact(damagedClip, 0.68f, 1f);
+                return;
+            }
+
+            PlayPitchedImpact(damagedClip, 0.92f, 0.55f);
+        }
+
+        /// <summary>가시의 날카로운 느낌을 강조한 높은 피격음을 겹쳐 재생합니다.</summary>
+        public void PlaySpikeCollision()
+        {
+            PlayPitchedImpact(damagedClip, 1.32f, 0.72f);
+        }
+
         /// <summary>점프 효과음을 재생합니다.</summary>
         private void PlayJump()
         {
@@ -115,5 +134,32 @@ using UnityEngine;
             {
                 audioSource.PlayOneShot(clip);
             }
+        }
+
+        /// <summary>공용 피격음을 별도 오디오 소스에서 지정한 음높이와 음량으로 재생합니다.</summary>
+        /// <param name="clip">재생할 공용 피격 오디오 클립입니다.</param>
+        /// <param name="pitch">충돌 종류를 표현할 음높이입니다.</param>
+        /// <param name="volume">추가 충돌음의 음량입니다.</param>
+        private void PlayPitchedImpact(
+            AudioClip clip,
+            float pitch,
+            float volume)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            GameObject soundObject = new GameObject("Hazard Impact Sound");
+            soundObject.transform.position = transform.position;
+            AudioSource impactSource = soundObject.AddComponent<AudioSource>();
+            impactSource.playOnAwake = false;
+            impactSource.loop = false;
+            impactSource.spatialBlend = 0f;
+            impactSource.clip = clip;
+            impactSource.pitch = pitch;
+            impactSource.volume = volume;
+            impactSource.Play();
+            Destroy(soundObject, clip.length / Mathf.Max(0.01f, pitch) + 0.1f);
         }
     }

@@ -14,7 +14,7 @@ public sealed class ChasingEnemy : MonoBehaviour
     // 평상시 순찰 이동 속도를 저장하는 변수입니다.
     [SerializeField, Min(0f)] private float patrolSpeed = 1.5f;
     // 플레이어 추적 중 적용할 이동 속도를 저장하는 변수입니다.
-    [SerializeField, Min(0f)] private float chaseSpeed = 3f;
+    [SerializeField, Min(0f)] private float chaseSpeed = 5.2f;
     // 한 방향으로 순찰하는 시간을 저장하는 변수입니다.
     [SerializeField, Min(0.1f)] private float patrolDuration = 1.6f;
     // 순찰 방향을 바꾸기 전에 대기하는 시간을 저장하는 변수입니다.
@@ -33,6 +33,8 @@ public sealed class ChasingEnemy : MonoBehaviour
     private float facingDirection = 1f;
     // 이전 물리 프레임에 플레이어를 추적하고 있었는지 저장하는 변수입니다.
     private bool wasChasing;
+    // 현재 플레이어를 향해 실제로 질주하고 있는지 저장하는 변수입니다.
+    private bool isDashing;
 
     /// <summary>평상시 순찰 이동 속도를 제공합니다.</summary>
     public float PatrolSpeed => patrolSpeed;
@@ -40,6 +42,8 @@ public sealed class ChasingEnemy : MonoBehaviour
     public float ChaseSpeed => chaseSpeed;
     /// <summary>추적형 적이 현재 바라보는 수평 방향을 제공합니다.</summary>
     public float FacingDirection => facingDirection;
+    /// <summary>추적형 적이 현재 안전한 경로에서 질주 중인지 제공합니다.</summary>
+    public bool IsDashing => isDashing;
 
     /// <summary>감지 거리와 평상시 및 추적 이동 속도를 설정합니다.</summary>
     /// <param name="range">플레이어를 감지할 수평 거리입니다.</param>
@@ -73,6 +77,7 @@ public sealed class ChasingEnemy : MonoBehaviour
     /// <summary>고정 물리 프레임마다 시야 상태에 따라 추적 또는 평상시 순찰을 처리합니다.</summary>
     private void FixedUpdate()
     {
+        isDashing = false;
         bool targetVisible = CanSeeTarget(); // 플레이어가 현재 거리와 직선 시야 조건을 만족하는지 여부입니다.
         if (targetVisible == true)
         {
@@ -135,6 +140,7 @@ public sealed class ChasingEnemy : MonoBehaviour
             return;
         }
         body.linearVelocity = new Vector2(chaseDirection * chaseSpeed, body.linearVelocity.y);
+        isDashing = true;
         ApplyFacingDirection(chaseDirection);
     }
 

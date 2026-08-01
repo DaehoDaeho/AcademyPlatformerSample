@@ -25,6 +25,14 @@ public static class MultiStageBuilder
             RebuildStageLayout(stageNumber);
             ReplaceStageEnemies(stageNumber);
             ReplaceStageItemsAndGoal(stageNumber);
+            GameObject spikePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+                "Assets/AcademyPlatformer/Prefabs/SpikeHazard.prefab");
+            if (spikePrefab != null)
+            {
+                SpikeHazardBuilder.ReplaceHazardsForOpenStage(
+                    stageNumber,
+                    spikePrefab);
+            }
             RebuildTilemapCollider();
             EditorSceneManager.SaveScene(
                 scene,

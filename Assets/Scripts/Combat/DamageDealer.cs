@@ -75,6 +75,41 @@ using UnityEngine;
             {
                 return false;
             }
-            return health.TakeDamage(damage, transform.position);
+            bool damageApplied =
+                health.TakeDamage(damage, transform.position); // 무적 상태가 아닐 때 실제로 피해가 적용되었는지 여부입니다.
+            if (damageApplied == true)
+            {
+                PlayEnemyCollisionFeedback(other);
+            }
+            return damageApplied;
+        }
+
+        /// <summary>적 종류를 판별해 플레이어에게 접촉 피격 이펙트와 효과음을 요청합니다.</summary>
+        /// <param name="other">적과 충돌한 플레이어 측 컴포넌트입니다.</param>
+        private void PlayEnemyCollisionFeedback(Component other)
+        {
+            bool powerfulImpact =
+                GetComponent<ChasingEnemy>() != null; // 충돌한 적이 대시형 적인지 여부입니다.
+            PlayerVfxFeedback vfxFeedback =
+                other.GetComponentInParent<PlayerVfxFeedback>(); // 전용 접촉 이펙트를 출력할 플레이어 컴포넌트입니다.
+            PlayerAudioFeedback audioFeedback =
+                other.GetComponentInParent<PlayerAudioFeedback>(); // 전용 접촉음을 출력할 플레이어 컴포넌트입니다.
+            Collider2D playerCollider =
+                other.GetComponent<Collider2D>(); // 실제 충돌 위치를 계산할 플레이어 콜라이더입니다.
+            Vector3 impactPosition = other.transform.position; // 접촉 효과를 생성할 기본 월드 위치입니다.
+            if (playerCollider != null)
+            {
+                impactPosition = playerCollider.ClosestPoint(transform.position);
+            }
+            if (vfxFeedback != null)
+            {
+                vfxFeedback.PlayEnemyCollisionEffect(
+                    impactPosition,
+                    powerfulImpact);
+            }
+            if (audioFeedback != null)
+            {
+                audioFeedback.PlayEnemyCollision(powerfulImpact);
+            }
         }
     }

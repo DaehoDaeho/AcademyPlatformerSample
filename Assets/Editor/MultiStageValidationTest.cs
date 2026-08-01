@@ -16,15 +16,12 @@ public static class MultiStageValidationTest
         passed = ValidateStageSelectScene() && passed;
         passed = ValidateStage(
             1,
-            typeof(PatrolEnemy),
             new Color(1f, 1f, 1f)) && passed;
         passed = ValidateStage(
             2,
-            typeof(ChasingEnemy),
             new Color(0.68f, 0.82f, 1f)) && passed;
         passed = ValidateStage(
             3,
-            typeof(RangedEnemyLookout),
             new Color(1f, 0.62f, 0.38f)) && passed;
 
         Debug.Log(
@@ -89,13 +86,11 @@ public static class MultiStageValidationTest
         return buttons.Length == StageProgressData.TotalStageCount;
     }
 
-    /// <summary>스테이지 하나의 전용 적 종류와 타일 색상을 확인합니다.</summary>
+    /// <summary>스테이지 하나에 세 종류의 적이 공존하고 타일 색상이 올바른지 확인합니다.</summary>
     /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
-    /// <param name="enemyType">해당 스테이지에 있어야 할 적 컴포넌트 자료형입니다.</param>
     /// <param name="tileColor">해당 스테이지의 타일 색상입니다.</param>
     private static bool ValidateStage(
         int stageNumber,
-        System.Type enemyType,
         Color tileColor)
     {
         EditorSceneManager.OpenScene(
@@ -104,16 +99,19 @@ public static class MultiStageValidationTest
         StompableEnemy[] enemies =
             Object.FindObjectsByType<StompableEnemy>(
                 FindObjectsSortMode.None);
-        bool hasExpectedEnemy = enemies.Any(
-            enemy => enemy.GetComponent(enemyType) != null);
-        bool allEnemiesMatch = enemies.All(
-            enemy => enemy.GetComponent(enemyType) != null);
+        bool hasPatrolEnemy = enemies.Any(
+            enemy => enemy.GetComponent<PatrolEnemy>() != null);
+        bool hasChasingEnemy = enemies.Any(
+            enemy => enemy.GetComponent<ChasingEnemy>() != null);
+        bool hasRangedEnemy = enemies.Any(
+            enemy => enemy.GetComponent<RangedEnemyLookout>() != null);
         bool colorMatches =
             tilemap != null &&
             Approximately(tilemap.color, tileColor);
         return enemies.Length > 0 &&
-            hasExpectedEnemy == true &&
-            allEnemiesMatch == true &&
+            hasPatrolEnemy == true &&
+            hasChasingEnemy == true &&
+            hasRangedEnemy == true &&
             colorMatches == true;
     }
 
