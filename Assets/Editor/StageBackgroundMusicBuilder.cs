@@ -7,8 +7,9 @@ using UnityEngine.SceneManagement;
 /// <summary>세 스테이지의 분위기가 서로 다른 오리지널 루프 배경음악을 생성합니다.</summary>
 public static class StageBackgroundMusicBuilder
 {
-    // 생성한 음악 파일을 저장할 Resources 폴더입니다.
-    private const string MusicFolder = "Assets/Resources/Audio";
+    // 생성한 음악 파일을 저장할 일반 Audio 폴더입니다.
+    private const string MusicFolder =
+        "Assets/AcademyPlatformer/Audio/Music";
     // 음악 파형을 생성할 초당 샘플 수입니다.
     private const int SampleRate = 44100;
     // 각 배경음악이 반복되기 전까지 재생되는 시간입니다.
@@ -19,12 +20,20 @@ public static class StageBackgroundMusicBuilder
     public static void Build()
     {
         Directory.CreateDirectory(MusicFolder);
-        CreateStageMusic(1, 120f, 60, 0.2f, 0.12f);
-        CreateStageMusic(2, 96f, 57, 0.16f, 0.06f);
-        CreateStageMusic(3, 138f, 52, 0.22f, 0.16f);
+        CreateStageMusic("StageMusic1", 1, 120f, 60, 0.2f, 0.12f);
+        CreateStageMusic("StageMusic2", 2, 96f, 57, 0.16f, 0.06f);
+        CreateStageMusic("StageMusic3", 3, 138f, 52, 0.22f, 0.16f);
+        CreateStageMusic(
+            "StageSelectAmbient",
+            2,
+            72f,
+            60,
+            0.09f,
+            0f);
         AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
         ConfigureMusicImporters();
         ConfigureStageScenes();
+        ConfigureStageSelectScene();
         AssetDatabase.SaveAssets();
         Debug.Log("STAGE_BACKGROUND_MUSIC_BUILD_COMPLETED");
     }
@@ -37,19 +46,31 @@ public static class StageBackgroundMusicBuilder
         {
             string musicPath =
                 MusicFolder + "/StageMusic" + stageNumber + ".wav";
-            AudioImporter musicImporter =
-                AssetImporter.GetAtPath(musicPath) as AudioImporter;
-            if (musicImporter != null)
-            {
-                AudioImporterSampleSettings sampleSettings =
-                    musicImporter.defaultSampleSettings;
-                sampleSettings.preloadAudioData = true;
-                musicImporter.defaultSampleSettings = sampleSettings;
-                musicImporter.loadInBackground = false;
-                musicImporter.SaveAndReimport();
-            }
+            ConfigureMusicImporter(musicPath);
             stageNumber++;
         }
+
+        ConfigureMusicImporter(
+            MusicFolder + "/StageSelectAmbient.wav");
+    }
+
+    /// <summary>한 음악 파일이 씬 시작 전에 데이터를 미리 읽도록 임포트 설정을 적용합니다.</summary>
+    /// <param name="musicPath">설정을 적용할 음악의 프로젝트 경로입니다.</param>
+    private static void ConfigureMusicImporter(string musicPath)
+    {
+        AudioImporter musicImporter =
+            AssetImporter.GetAtPath(musicPath) as AudioImporter;
+        if (musicImporter == null)
+        {
+            return;
+        }
+
+        AudioImporterSampleSettings sampleSettings =
+            musicImporter.defaultSampleSettings;
+        sampleSettings.preloadAudioData = true;
+        musicImporter.defaultSampleSettings = sampleSettings;
+        musicImporter.loadInBackground = false;
+        musicImporter.SaveAndReimport();
     }
 
     /// <summary>모든 스테이지의 게임 관리자에 전용 음악 재생기와 음악 클립을 직접 연결합니다.</summary>
@@ -99,14 +120,40 @@ public static class StageBackgroundMusicBuilder
         }
     }
 
+    /// <summary>스테이지 선택 씬에 은은한 전용 음악 재생기와 직렬화된 음악 클립을 연결합니다.</summary>
+    private static void ConfigureStageSelectScene()
+    {
+        Scene stageSelectScene = EditorSceneManager.OpenScene(
+            "Assets/Scenes/StageSelect.unity",
+            OpenSceneMode.Single);
+        MenuBackgroundMusic menuMusic =
+            Object.FindFirstObjectByType<MenuBackgroundMusic>();
+        if (menuMusic == null)
+        {
+            GameObject musicObject = new GameObject(
+                "Stage Select Background Music");
+            musicObject.AddComponent<AudioSource>();
+            menuMusic = musicObject.AddComponent<MenuBackgroundMusic>();
+        }
+
+        AudioClip musicClip = AssetDatabase.LoadAssetAtPath<AudioClip>(
+            MusicFolder + "/StageSelectAmbient.wav");
+        menuMusic.Configure(musicClip, 0.11f);
+        EditorUtility.SetDirty(menuMusic);
+        EditorSceneManager.MarkSceneDirty(stageSelectScene);
+        EditorSceneManager.SaveScene(stageSelectScene);
+    }
+
     /// <summary>지정한 템포와 음색으로 한 스테이지의 반복 음악 파형을 생성합니다.</summary>
-    /// <param name="stageNumber">음악을 사용할 스테이지 번호입니다.</param>
+    /// <param name="fileName">확장자를 제외한 음악 파일 이름입니다.</param>
+    /// <param name="patternNumber">멜로디와 코드 패턴을 선택할 번호입니다.</param>
     /// <param name="tempo">분당 박자 수입니다.</param>
     /// <param name="rootMidi">곡의 기준이 되는 MIDI 음 번호입니다.</param>
     /// <param name="melodyVolume">멜로디 음량입니다.</param>
     /// <param name="rhythmVolume">리듬 음량입니다.</param>
     private static void CreateStageMusic(
-        int stageNumber,
+        string fileName,
+        int patternNumber,
         float tempo,
         int rootMidi,
         float melodyVolume,
@@ -115,8 +162,8 @@ public static class StageBackgroundMusicBuilder
         int totalSampleCount = Mathf.RoundToInt(MusicDuration * SampleRate);
         short[] samples = new short[totalSampleCount];
         float beatDuration = 60f / tempo;
-        int[] melodyPattern = GetMelodyPattern(stageNumber);
-        int[] chordPattern = GetChordPattern(stageNumber);
+        int[] melodyPattern = GetMelodyPattern(patternNumber);
+        int[] chordPattern = GetChordPattern(patternNumber);
         int sampleIndex = 0;
         while (sampleIndex < totalSampleCount)
         {
@@ -166,7 +213,7 @@ public static class StageBackgroundMusicBuilder
         }
 
         string assetPath =
-            MusicFolder + "/StageMusic" + stageNumber + ".wav";
+            MusicFolder + "/" + fileName + ".wav";
         WriteWaveFile(assetPath, samples);
     }
 

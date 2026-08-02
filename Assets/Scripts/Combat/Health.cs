@@ -76,6 +76,25 @@ using UnityEngine;
             return true;
         }
 
+        /// <summary>현재 체력을 최대 체력 범위 안에서 회복하고 변경 이벤트를 알립니다.</summary>
+        /// <param name="amount">회복할 체력의 양입니다.</param>
+        /// <returns>실제로 체력이 회복되었으면 true입니다.</returns>
+        public bool Heal(int amount)
+        {
+            bool invalidHealAmount = amount <= 0; // 회복량이 유효하지 않은지 여부입니다.
+            bool alreadyAtMaximum = Current >= maxHealth; // 현재 체력이 이미 최대인지 여부입니다.
+            if (invalidHealAmount == true ||
+                alreadyAtMaximum == true ||
+                IsDead == true)
+            {
+                return false;
+            }
+
+            Current = Mathf.Min(maxHealth, Current + amount);
+            Changed?.Invoke(Current, maxHealth);
+            return true;
+        }
+
         /// <summary>무적 상태를 무시하고 현재 체력을 0으로 만들어 즉시 사망 처리합니다.</summary>
         /// <param name="sourcePosition">사망 원인이 발생한 월드 위치입니다.</param>
         /// <returns>새롭게 사망 처리되었는지 여부입니다.</returns>

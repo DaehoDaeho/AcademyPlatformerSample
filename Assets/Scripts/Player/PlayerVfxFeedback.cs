@@ -123,6 +123,22 @@ public sealed class PlayerVfxFeedback : MonoBehaviour
         CollectibleEffectPlayCount++;
     }
 
+    /// <summary>회복 포션을 획득한 위치에 밝은 회복 파티클을 생성합니다.</summary>
+    /// <param name="worldPosition">회복 포션이 있던 월드 위치입니다.</param>
+    public void PlayHealingEffect(Vector3 worldPosition)
+    {
+        if (collectibleEffectPrefab == null)
+        {
+            return;
+        }
+
+        GameObject healingEffect = Instantiate(
+            collectibleEffectPrefab,
+            worldPosition,
+            Quaternion.identity);
+        healingEffect.transform.localScale = Vector3.one * 1.15f;
+    }
+
     /// <summary>
     /// 투사체가 닿은 위치에 피격 스파크 이펙트를 생성합니다.
     /// </summary>

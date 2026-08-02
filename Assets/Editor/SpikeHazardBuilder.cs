@@ -49,15 +49,111 @@ public static class SpikeHazardBuilder
         int hazardIndex = 0;
         foreach (Vector2Int cell in cells)
         {
+            bool hasSafeRunUp =
+                MultiStageBuilder.HasSafeHazardRunUp(
+                    stageNumber,
+                    cell,
+                    3);
+            if (hasSafeRunUp == false)
+            {
+                throw new System.InvalidOperationException(
+                    "Stage " + stageNumber +
+                    " spike at " + cell +
+                    " does not leave three clear tiles at both platform edges.");
+            }
+
+            ValidateEnemyClearance(stageNumber, cell);
+            ValidateStarClearance(stageNumber, cell);
+
             GameObject hazard =
                 (GameObject)PrefabUtility.InstantiatePrefab(spikePrefab);
             hazard.name =
                 "Stage " + stageNumber + " Spike " + (hazardIndex + 1);
             hazard.transform.position = new Vector3(
                 cell.x,
-                cell.y + 0.58f,
+                cell.y + 1.08f,
                 0f);
             hazardIndex++;
+        }
+    }
+
+    /// <summary>함정이 같은 발판의 적 또는 순찰 경로와 겹치지 않는지 검사합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="hazardCell">검사할 함정의 타일 좌표입니다.</param>
+    private static void ValidateEnemyClearance(
+        int stageNumber,
+        Vector2Int hazardCell)
+    {
+        StompableEnemy[] enemies =
+            Object.FindObjectsByType<StompableEnemy>(
+                FindObjectsSortMode.None);
+        float hazardY = hazardCell.y + 1.08f;
+        foreach (StompableEnemy enemy in enemies)
+        {
+            float verticalDistance =
+                Mathf.Abs(enemy.transform.position.y - hazardY);
+            bool isOnSamePlatform = verticalDistance < 1.5f;
+            if (isOnSamePlatform == false)
+            {
+                continue;
+            }
+
+            bool sharesPlatform =
+                MultiStageBuilder.SharesPlatformSection(
+                    stageNumber,
+                    hazardCell,
+                    enemy.transform.position.x);
+            if (sharesPlatform == true)
+            {
+                throw new System.InvalidOperationException(
+                    "Stage " + stageNumber +
+                    " spike at " + hazardCell +
+                    " overlaps the safe space of enemy " + enemy.name + ".");
+            }
+        }
+    }
+
+    /// <summary>함정과 같은 발판에 있는 스타가 안전한 점프 간격을 확보했는지 검사합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="hazardCell">검사할 함정의 타일 좌표입니다.</param>
+    private static void ValidateStarClearance(
+        int stageNumber,
+        Vector2Int hazardCell)
+    {
+        Collectible[] stars =
+            Object.FindObjectsByType<Collectible>(
+                FindObjectsSortMode.None);
+        float hazardY = hazardCell.y + 1.08f;
+        foreach (Collectible star in stars)
+        {
+            float verticalDistance = Mathf.Abs(
+                star.transform.position.y - hazardY);
+            bool isOnSamePlatform = verticalDistance < 1.5f;
+            if (isOnSamePlatform == false)
+            {
+                continue;
+            }
+
+            bool sharesPlatform =
+                MultiStageBuilder.SharesPlatformSection(
+                    stageNumber,
+                    hazardCell,
+                    star.transform.position.x);
+            if (sharesPlatform == false)
+            {
+                continue;
+            }
+
+            float horizontalDistance = Mathf.Abs(
+                star.transform.position.x - hazardCell.x);
+            bool hasSafeDistance = horizontalDistance >= 3f;
+            if (hasSafeDistance == false)
+            {
+                throw new System.InvalidOperationException(
+                    "Stage " + stageNumber +
+                    " spike at " + hazardCell +
+                    " is too close to star " + star.name + ".");
+            }
         }
     }
 
@@ -173,11 +269,8 @@ public static class SpikeHazardBuilder
             return new Vector2Int[]
             {
                 new Vector2Int(7, -4),
-                new Vector2Int(24, -4),
-                new Vector2Int(39, -4),
-                new Vector2Int(54, -4),
-                new Vector2Int(62, 2),
-                new Vector2Int(72, 11)
+                new Vector2Int(83, 2),
+                new Vector2Int(93, 14)
             };
         }
 
@@ -185,22 +278,16 @@ public static class SpikeHazardBuilder
         {
             return new Vector2Int[]
             {
-                new Vector2Int(7, -4),
-                new Vector2Int(20, -4),
-                new Vector2Int(33, -4),
-                new Vector2Int(47, -4),
-                new Vector2Int(62, -4),
-                new Vector2Int(56, 8)
+                new Vector2Int(5, -4),
+                new Vector2Int(36, 8),
+                new Vector2Int(34, 14),
+                new Vector2Int(56, 20)
             };
         }
 
         return new Vector2Int[]
         {
-            new Vector2Int(8, -4),
-            new Vector2Int(22, -4),
-            new Vector2Int(36, -4),
-            new Vector2Int(51, -4),
-            new Vector2Int(56, 26)
+                new Vector2Int(5, -4)
         };
     }
 }

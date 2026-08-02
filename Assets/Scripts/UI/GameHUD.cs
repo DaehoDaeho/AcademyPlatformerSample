@@ -10,6 +10,10 @@ using UnityEngine.UI;
         [SerializeField] private Health playerHealth;
         // 체력과 점수를 표시할 텍스트를 저장하는 변수입니다.
         [SerializeField] private Text statusText;
+        // 현재 체력을 녹색으로 표시하는 이미지 기반 체력 바입니다.
+        [SerializeField] private Image healthBarFillImage;
+        // 실제 체력보다 조금 늦게 감소해 피해량을 보여주는 보조 이미지입니다.
+        [SerializeField] private Image delayedHealthBarFillImage;
         // 조작 안내를 표시할 텍스트를 저장하는 변수입니다.
         [SerializeField] private Text messageText;
         // 게임 종료 화면 오브젝트를 저장하는 변수입니다.
@@ -26,6 +30,10 @@ using UnityEngine.UI;
         [SerializeField] private Button nextStageButton;
         // 스테이지 선택 화면으로 돌아가는 버튼입니다.
         [SerializeField] private Button stageSelectButton;
+        // 체력 바가 도달해야 할 0에서 1 사이의 목표 비율입니다.
+        private float targetHealthRatio = 1f;
+        // 보조 체력 바가 감소하기 전에 기다릴 남은 시간입니다.
+        private float delayedBarWaitTime;
 
         /// <summary>게임 종료 화면이 현재 표시 중인지 제공합니다.</summary>
         public bool EndScreenVisible => endScreen != null && endScreen.activeSelf;
@@ -102,6 +110,20 @@ using UnityEngine.UI;
             stageSelectButton = stageSelect;
         }
 
+        /// <summary>에디터 UI 구성 코드에서 이미지 기반 체력 바와 Star 설명 텍스트를 연결합니다.</summary>
+        /// <param name="healthFill">현재 체력을 표시할 전경 이미지입니다.</param>
+        /// <param name="delayedHealthFill">피해량을 늦게 따라가는 보조 이미지입니다.</param>
+        /// <param name="starDisplay">Star 획득 의미를 표시할 텍스트입니다.</param>
+        public void ConfigureVisualStatus(
+            Image healthFill,
+            Image delayedHealthFill,
+            Text starDisplay)
+        {
+            healthBarFillImage = healthFill;
+            delayedHealthBarFillImage = delayedHealthFill;
+            statusText = starDisplay;
+        }
+
         /// <summary>HUD 이벤트를 등록하고 초기 화면 내용을 표시합니다.</summary>
         private void Start()
         {
@@ -117,6 +139,12 @@ using UnityEngine.UI;
             endGuideText.gameObject.SetActive(false);
             endScreen.SetActive(false);
             SetDeathFadeAlpha(0f);
+        }
+
+        /// <summary>매 프레임 현재 체력 바와 지연 체력 바를 목표 비율까지 부드럽게 이동시킵니다.</summary>
+        private void Update()
+        {
+            UpdateHealthBar();
         }
 
         /// <summary>HUD가 등록한 체력 및 게임 상태 이벤트를 해제합니다.</summary>
@@ -141,6 +169,14 @@ using UnityEngine.UI;
         /// <param name="maximumHealth">플레이어의 최대 체력입니다.</param>
         private void OnHealthChanged(int currentHealth, int maximumHealth)
         {
+            float previousTargetRatio = targetHealthRatio; // 변경 직전 체력 바의 목표 비율입니다.
+            targetHealthRatio = CalculateHealthRatio(
+                currentHealth,
+                maximumHealth);
+            if (targetHealthRatio < previousTargetRatio)
+            {
+                delayedBarWaitTime = 0.18f;
+            }
             Refresh();
         }
         /// <summary>점수가 변경되면 상태 텍스트를 갱신합니다.</summary>
@@ -152,11 +188,77 @@ using UnityEngine.UI;
         /// <summary>현재 체력과 점수를 상태 텍스트에 표시합니다.</summary>
         private void Refresh()
         {
-            string healthDisplay =
-                $"HP: {playerHealth.Current}/{playerHealth.Max}"; // HUD에 표시할 현재 체력 문자열입니다.
-            string starDisplay =
-                $"Stars: {GameManager.Instance.Score}/{GameManager.Instance.TotalCollectibles}"; // HUD에 표시할 Star 획득 현황 문자열입니다.
-            statusText.text = healthDisplay + "    " + starDisplay;
+            targetHealthRatio = CalculateHealthRatio(
+                playerHealth.Current,
+                playerHealth.Max);
+            if (healthBarFillImage != null &&
+                healthBarFillImage.fillAmount <= 0f)
+            {
+                healthBarFillImage.fillAmount = targetHealthRatio;
+            }
+            if (delayedHealthBarFillImage != null &&
+                delayedHealthBarFillImage.fillAmount <= 0f)
+            {
+                delayedHealthBarFillImage.fillAmount = targetHealthRatio;
+            }
+            statusText.text =
+                "STAR COLLECTED   " +
+                GameManager.Instance.Score +
+                " / " +
+                GameManager.Instance.TotalCollectibles;
+        }
+
+        /// <summary>현재 체력과 최대 체력으로 이미지에 적용할 0에서 1 사이 비율을 계산합니다.</summary>
+        /// <param name="currentHealth">현재 남아 있는 체력입니다.</param>
+        /// <param name="maximumHealth">플레이어의 최대 체력입니다.</param>
+        /// <returns>체력 바 이미지에 적용할 비율입니다.</returns>
+        private float CalculateHealthRatio(
+            int currentHealth,
+            int maximumHealth)
+        {
+            if (maximumHealth <= 0)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01((float)currentHealth / maximumHealth);
+        }
+
+        /// <summary>현재 체력 이미지는 빠르게, 보조 체력 이미지는 잠시 후 천천히 목표값으로 보간합니다.</summary>
+        private void UpdateHealthBar()
+        {
+            if (healthBarFillImage != null)
+            {
+                healthBarFillImage.fillAmount = Mathf.MoveTowards(
+                    healthBarFillImage.fillAmount,
+                    targetHealthRatio,
+                    Time.unscaledDeltaTime * 2.8f);
+            }
+
+            if (delayedHealthBarFillImage == null)
+            {
+                return;
+            }
+
+            if (targetHealthRatio >= delayedHealthBarFillImage.fillAmount)
+            {
+                delayedHealthBarFillImage.fillAmount = Mathf.MoveTowards(
+                    delayedHealthBarFillImage.fillAmount,
+                    targetHealthRatio,
+                    Time.unscaledDeltaTime * 2.8f);
+                return;
+            }
+
+            if (delayedBarWaitTime > 0f)
+            {
+                delayedBarWaitTime -= Time.unscaledDeltaTime;
+                return;
+            }
+
+            delayedHealthBarFillImage.fillAmount = Mathf.MoveTowards(
+                delayedHealthBarFillImage.fillAmount,
+                targetHealthRatio,
+                Time.unscaledDeltaTime * 1.15f);
         }
         /// <summary>승패 결과에 맞는 게임 종료 화면을 표시합니다.</summary>
         /// <param name="won">승리 여부입니다.</param>
@@ -164,6 +266,15 @@ using UnityEngine.UI;
         {
             if (won == true)
             {
+                bool clearedFinalStage =
+                    GameManager.Instance.StageNumber ==
+                    StageProgressData.TotalStageCount;
+                if (clearedFinalStage == true)
+                {
+                    endScreen.SetActive(false);
+                    return;
+                }
+
                 endTitleText.text = "LEVEL CLEAR!";
                 endTitleText.color = new Color(0.35f, 1f, 0.55f);
                 nextStageButton.gameObject.SetActive(

@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -162,8 +163,27 @@ using UnityEngine.SceneManagement;
         /// <summary>플레이어 클리어 연출이 끝난 뒤 실제 승리 상태로 전환합니다.</summary>
         private void CompleteWinSequence()
         {
+            StageProgressData.RecordStageStars(
+                stageNumber,
+                Score,
+                totalCollectibles);
             StageProgressData.RecordStageClear(stageNumber);
             Finish(true);
+            bool clearedFinalStage =
+                stageNumber == StageProgressData.TotalStageCount;
+            if (clearedFinalStage == true)
+            {
+                StartCoroutine(LoadEndingAfterPresentation());
+            }
+        }
+
+        /// <summary>마지막 스테이지의 폭죽과 팡파레가 재생된 뒤 엔딩 씬으로 전환합니다.</summary>
+        /// <returns>실시간으로 엔딩 전환을 기다리는 코루틴 열거자입니다.</returns>
+        private IEnumerator LoadEndingAfterPresentation()
+        {
+            yield return new WaitForSecondsRealtime(3.2f);
+            Time.timeScale = 1f;
+            SceneFadeController.LoadSceneWithFade("Ending");
         }
         /// <summary>게임을 패배 상태로 종료합니다.</summary>
         private void BeginLoseSequence()

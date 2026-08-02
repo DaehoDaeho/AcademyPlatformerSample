@@ -25,6 +25,8 @@ public sealed class GameEndPresentation : MonoBehaviour
         audioSource.playOnAwake = false;
         audioSource.loop = false;
         audioSource.spatialBlend = 0f;
+        audioSource.ignoreListenerPause = true;
+        audioSource.volume = 0.8f;
         CreateEffectLayer();
     }
 

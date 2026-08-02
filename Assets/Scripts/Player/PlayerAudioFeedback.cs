@@ -86,6 +86,12 @@ using UnityEngine;
             Play(collectibleClip);
         }
 
+        /// <summary>회복 포션을 마시는 느낌의 밝고 높은 획득음을 재생합니다.</summary>
+        public void PlayHealing()
+        {
+            PlayPitchedImpact(collectibleClip, 1.12f, 0.82f);
+        }
+
         /// <summary>적 접촉 종류에 따라 일반 또는 강한 충돌음을 겹쳐 재생합니다.</summary>
         /// <param name="powerfulImpact">대시형 적의 강한 충돌이면 true입니다.</param>
         public void PlayEnemyCollision(bool powerfulImpact)

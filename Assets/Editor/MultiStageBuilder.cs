@@ -12,6 +12,68 @@ public static class MultiStageBuilder
     // 생성된 스테이지 씬을 저장할 폴더입니다.
     private const string SceneFolderPath = "Assets/Scenes";
 
+    /// <summary>요청된 두 스타만 기존 씬에서 찾아 새 위치로 이동합니다.</summary>
+    [MenuItem("Tools/Academy Platformer/Fix Two Star Positions")]
+    public static void FixTwoStarPositions()
+    {
+        MoveStarInScene(
+            2,
+            new Vector2(0f, -2f),
+            new Vector2(23f, -2f));
+        MoveStarInScene(
+            3,
+            new Vector2(91f, 26f),
+            new Vector2(83f, 23f));
+        AssetDatabase.SaveAssets();
+        Debug.Log("TWO_STAR_POSITION_FIX_COMPLETED");
+    }
+
+    /// <summary>지정한 스테이지에서 기존 좌표와 일치하는 스타 하나만 새 좌표로 이동합니다.</summary>
+    /// <param name="stageNumber">수정할 스테이지 번호입니다.</param>
+    /// <param name="oldPosition">현재 스타의 월드 좌표입니다.</param>
+    /// <param name="newPosition">스타를 옮길 새 월드 좌표입니다.</param>
+    private static void MoveStarInScene(
+        int stageNumber,
+        Vector2 oldPosition,
+        Vector2 newPosition)
+    {
+        string scenePath =
+            SceneFolderPath + "/Stage" + stageNumber + ".unity";
+        Scene scene = EditorSceneManager.OpenScene(
+            scenePath,
+            OpenSceneMode.Single);
+        Collectible[] stars = Object.FindObjectsByType<Collectible>(
+            FindObjectsSortMode.None);
+        Collectible targetStar = null;
+        foreach (Collectible star in stars)
+        {
+            float distance = Vector2.Distance(
+                star.transform.position,
+                oldPosition);
+            if (distance <= 0.01f)
+            {
+                targetStar = star;
+                break;
+            }
+        }
+
+        if (targetStar == null)
+        {
+            throw new System.InvalidOperationException(
+                "Stage " + stageNumber +
+                " does not contain the requested star at " +
+                oldPosition + ".");
+        }
+
+        targetStar.transform.position = new Vector3(
+            newPosition.x,
+            newPosition.y,
+            targetStar.transform.position.z);
+        EditorUtility.SetDirty(targetStar.transform);
+        EditorSceneManager.MarkSceneDirty(scene);
+        EditorSceneManager.SaveScene(scene);
+    }
+
     /// <summary>스테이지 1부터 3까지 씬을 복제하고 각각 다른 구성을 적용합니다.</summary>
     public static void BuildStageScenes()
     {
@@ -23,8 +85,11 @@ public static class MultiStageBuilder
                 OpenSceneMode.Single);
             ApplyStageConcept(stageNumber);
             RebuildStageLayout(stageNumber);
+            ReplaceMovingPlatforms(stageNumber);
+            ConfigureStageCamera(stageNumber);
             ReplaceStageEnemies(stageNumber);
             ReplaceStageItemsAndGoal(stageNumber);
+            ValidateStarEnemySpacing(stageNumber);
             GameObject spikePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(
                 "Assets/AcademyPlatformer/Prefabs/SpikeHazard.prefab");
             if (spikePrefab != null)
@@ -40,6 +105,8 @@ public static class MultiStageBuilder
             stageNumber++;
         }
 
+        HealthPotionBuilder.Build();
+        GameEndPresentationBuilder.Build();
         AssetDatabase.SaveAssets();
         Debug.Log("MULTI_STAGE_BUILD_COMPLETED");
     }
@@ -182,21 +249,18 @@ public static class MultiStageBuilder
             return new PlatformSection[]
             {
                 new PlatformSection(-2, 10, -4, true),
-                new PlatformSection(13, 25, -4, true),
-                new PlatformSection(28, 40, -4, true),
-                new PlatformSection(43, 55, -4, true),
-                new PlatformSection(52, 60, -1, false),
-                new PlatformSection(59, 67, 2, false),
-                new PlatformSection(66, 74, 5, false),
-                new PlatformSection(59, 67, 8, false),
-                new PlatformSection(66, 74, 11, false),
-                new PlatformSection(59, 67, 14, false),
-                new PlatformSection(66, 74, 17, false),
-                new PlatformSection(59, 67, 20, false),
-                new PlatformSection(66, 74, 23, false),
-                new PlatformSection(59, 67, 26, false),
-                new PlatformSection(66, 74, 29, false),
-                new PlatformSection(70, 79, 32, false)
+                new PlatformSection(13, 30, -4, true),
+                new PlatformSection(33, 42, -4, true),
+                new PlatformSection(53, 66, -4, true),
+                new PlatformSection(64, 76, -1, false),
+                new PlatformSection(74, 86, 2, false),
+                new PlatformSection(84, 96, 5, false),
+                new PlatformSection(94, 106, 8, false),
+                new PlatformSection(100, 112, 11, false),
+                new PlatformSection(90, 102, 14, false),
+                new PlatformSection(80, 92, 17, false),
+                new PlatformSection(88, 100, 20, false),
+                new PlatformSection(98, 112, 23, false)
             };
         }
 
@@ -205,22 +269,18 @@ public static class MultiStageBuilder
             return new PlatformSection[]
             {
                 new PlatformSection(-2, 8, -4, true),
-                new PlatformSection(11, 21, -4, true),
-                new PlatformSection(24, 34, -4, true),
-                new PlatformSection(37, 48, -4, true),
-                new PlatformSection(51, 63, -4, true),
-                new PlatformSection(55, 64, -1, false),
-                new PlatformSection(48, 57, 2, false),
-                new PlatformSection(41, 50, 5, false),
-                new PlatformSection(48, 57, 8, false),
-                new PlatformSection(55, 64, 11, false),
-                new PlatformSection(62, 71, 14, false),
-                new PlatformSection(55, 64, 17, false),
-                new PlatformSection(48, 57, 20, false),
-                new PlatformSection(55, 64, 23, false),
-                new PlatformSection(62, 71, 26, false),
-                new PlatformSection(68, 77, 29, false),
-                new PlatformSection(70, 79, 32, false)
+                new PlatformSection(11, 25, -4, true),
+                new PlatformSection(28, 40, -4, true),
+                new PlatformSection(43, 61, -4, true),
+                new PlatformSection(49, 62, 2, false),
+                new PlatformSection(38, 51, 5, false),
+                new PlatformSection(27, 40, 8, false),
+                new PlatformSection(16, 29, 11, false),
+                new PlatformSection(24, 37, 14, false),
+                new PlatformSection(35, 48, 17, false),
+                new PlatformSection(46, 59, 20, false),
+                new PlatformSection(57, 70, 23, false),
+                new PlatformSection(68, 80, 26, false)
             };
         }
 
@@ -228,21 +288,269 @@ public static class MultiStageBuilder
         {
             new PlatformSection(-2, 9, -4, true),
             new PlatformSection(12, 23, -4, true),
-            new PlatformSection(26, 37, -4, true),
-            new PlatformSection(40, 52, -4, true),
-            new PlatformSection(49, 58, -1, false),
-            new PlatformSection(55, 64, 2, false),
-            new PlatformSection(61, 70, 5, false),
-            new PlatformSection(54, 63, 8, false),
-            new PlatformSection(47, 56, 11, false),
-            new PlatformSection(54, 63, 14, false),
-            new PlatformSection(61, 70, 17, false),
-            new PlatformSection(68, 77, 20, false),
-            new PlatformSection(61, 70, 23, false),
-            new PlatformSection(54, 63, 26, false),
-            new PlatformSection(61, 70, 29, false),
-            new PlatformSection(69, 79, 32, false)
+            new PlatformSection(26, 36, -4, true),
+            new PlatformSection(39, 50, -4, true),
+            new PlatformSection(58, 64, 1, false),
+            new PlatformSection(68, 74, 3, false),
+            new PlatformSection(78, 84, 5, false),
+            new PlatformSection(68, 74, 7, false),
+            new PlatformSection(58, 64, 9, false),
+            new PlatformSection(48, 54, 11, false),
+            new PlatformSection(38, 44, 13, false),
+            new PlatformSection(48, 54, 15, false),
+            new PlatformSection(58, 64, 17, false),
+            new PlatformSection(68, 74, 19, false),
+            new PlatformSection(78, 84, 21, false),
+            new PlatformSection(88, 94, 24, false)
         };
+    }
+
+    /// <summary>스테이지의 새 수평 길이에 맞춰 카메라 추적 범위를 개별 설정합니다.</summary>
+    /// <param name="stageNumber">카메라 범위를 적용할 스테이지 번호입니다.</param>
+    /// <summary>함정이 놓인 발판의 양쪽에 안전한 점프 여백이 있는지 확인합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="hazardCell">검사할 함정의 타일 좌표입니다.</param>
+    /// <param name="minimumClearTiles">발판 양끝에 확보할 최소 타일 수입니다.</param>
+    /// <returns>함정 양쪽에 지정한 여백이 있으면 참을 반환합니다.</returns>
+    /// <summary>기존 이동 플랫폼을 제거하고 스테이지별 필수 진행 경로에 새 이동 플랫폼을 배치합니다.</summary>
+    /// <param name="stageNumber">이동 플랫폼을 배치할 스테이지 번호입니다.</param>
+    private static void ReplaceMovingPlatforms(int stageNumber)
+    {
+        MovingPlatform[] existingPlatforms =
+            Object.FindObjectsByType<MovingPlatform>(
+                FindObjectsSortMode.None);
+        foreach (MovingPlatform existingPlatform in existingPlatforms)
+        {
+            Object.DestroyImmediate(existingPlatform.gameObject);
+        }
+
+        Vector2[] pathPoints;
+        float moveSpeed;
+        string platformName;
+        if (stageNumber == 1)
+        {
+            pathPoints = new Vector2[]
+            {
+                new Vector2(45f, -3.35f),
+                new Vector2(50f, -3.35f)
+            };
+            moveSpeed = 2f;
+            platformName = "Forest Horizontal Moving Platform";
+        }
+        else if (stageNumber == 2)
+        {
+            pathPoints = new Vector2[]
+            {
+                new Vector2(64.5f, -3.35f),
+                new Vector2(64.5f, 1.7f)
+            };
+            moveSpeed = 1.6f;
+            platformName = "Twilight Vertical Moving Platform";
+        }
+        else
+        {
+            pathPoints = new Vector2[]
+            {
+                new Vector2(53f, -2.4f),
+                new Vector2(55f, -0.2f),
+                new Vector2(56f, 1.5f)
+            };
+            moveSpeed = 1.8f;
+            platformName = "Crimson Multi Path Moving Platform";
+        }
+
+        ValidateMovingPlatformClearance(stageNumber, pathPoints);
+        Tilemap tilemap = Object.FindFirstObjectByType<Tilemap>();
+        Sprite platformSprite = tilemap.GetSprite(
+            new Vector3Int(0, -4, 0));
+        TilemapRenderer tilemapRenderer =
+            tilemap.GetComponent<TilemapRenderer>();
+        GameObject platformObject = new GameObject(platformName);
+        platformObject.layer = LayerMask.NameToLayer("Ground");
+        platformObject.transform.position = pathPoints[0];
+
+        Rigidbody2D platformBody =
+            platformObject.AddComponent<Rigidbody2D>();
+        platformBody.bodyType = RigidbodyType2D.Kinematic;
+        platformBody.gravityScale = 0f;
+        platformBody.useFullKinematicContacts = true;
+        platformBody.freezeRotation = true;
+        platformBody.interpolation = RigidbodyInterpolation2D.Interpolate;
+        platformBody.collisionDetectionMode =
+            CollisionDetectionMode2D.Continuous;
+
+        BoxCollider2D platformCollider =
+            platformObject.AddComponent<BoxCollider2D>();
+            platformCollider.size = new Vector2(3f, 1f);
+
+        int visualIndex = -1;
+        while (visualIndex <= 1)
+        {
+            GameObject visualObject =
+                new GameObject("Platform Tile " + (visualIndex + 2));
+            visualObject.transform.SetParent(
+                platformObject.transform,
+                false);
+            visualObject.transform.localPosition =
+                new Vector3(visualIndex, 0f, 0f);
+            SpriteRenderer visualRenderer =
+                visualObject.AddComponent<SpriteRenderer>();
+            visualRenderer.sprite = platformSprite;
+            visualRenderer.sortingLayerID =
+                tilemapRenderer.sortingLayerID;
+            visualRenderer.sortingOrder =
+                tilemapRenderer.sortingOrder + 1;
+            visualIndex++;
+        }
+
+        MovingPlatform movingPlatform =
+            platformObject.AddComponent<MovingPlatform>();
+        movingPlatform.Configure(pathPoints, moveSpeed, 0.55f);
+    }
+
+    /// <summary>이동 플랫폼의 전체 이동 경로가 고정 발판 영역과 겹치지 않는지 검사합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="pathPoints">플랫폼이 순서대로 이동할 경로 지점 목록입니다.</param>
+    private static void ValidateMovingPlatformClearance(
+        int stageNumber,
+        Vector2[] pathPoints)
+    {
+        PlatformSection[] sections = GetStageSections(stageNumber);
+        int pathIndex = 1;
+        while (pathIndex <= pathPoints.Length)
+        {
+            Vector2 startPoint = pathPoints[pathIndex - 1];
+            int endPointIndex = pathIndex % pathPoints.Length;
+            Vector2 endPoint = pathPoints[endPointIndex];
+            float segmentDistance = Vector2.Distance(
+                startPoint,
+                endPoint);
+            int sampleCount = Mathf.Max(
+                1,
+                Mathf.CeilToInt(segmentDistance / 0.2f));
+            int sampleIndex = 0;
+            while (sampleIndex <= sampleCount)
+            {
+                float sampleRatio =
+                    (float)sampleIndex / sampleCount;
+                Vector2 samplePosition = Vector2.Lerp(
+                    startPoint,
+                    endPoint,
+                    sampleRatio);
+                Rect movingBounds = new Rect(
+                    samplePosition.x - 1.5f,
+                    samplePosition.y - 0.5f,
+                    3f,
+                    1f);
+                foreach (PlatformSection section in sections)
+                {
+                    Rect sectionBounds = new Rect(
+                        section.StartX,
+                        section.HeightY,
+                        section.EndX - section.StartX + 1f,
+                        1f);
+                    bool overlapsSection =
+                        movingBounds.Overlaps(sectionBounds);
+                    if (overlapsSection == true)
+                    {
+                        throw new System.InvalidOperationException(
+                            "Stage " + stageNumber +
+                            " moving platform overlaps a fixed platform at " +
+                            samplePosition + ".");
+                    }
+                }
+
+                sampleIndex++;
+            }
+
+            pathIndex++;
+        }
+    }
+
+    /// <summary>함정이 놓인 발판의 양쪽에 안전한 점프 여백이 있는지 확인합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="hazardCell">검사할 함정의 타일 좌표입니다.</param>
+    /// <param name="minimumClearTiles">발판 양끝에 확보할 최소 타일 수입니다.</param>
+    /// <returns>함정 양쪽에 지정한 여백이 있으면 참을 반환합니다.</returns>
+    public static bool HasSafeHazardRunUp(
+        int stageNumber,
+        Vector2Int hazardCell,
+        int minimumClearTiles)
+    {
+        PlatformSection[] sections = GetStageSections(stageNumber);
+        foreach (PlatformSection section in sections)
+        {
+            bool matchesHeight = section.HeightY == hazardCell.y;
+            bool isInsideSection =
+                hazardCell.x >= section.StartX &&
+                hazardCell.x <= section.EndX;
+            if (matchesHeight == true && isInsideSection == true)
+            {
+                int leftClearTiles = hazardCell.x - section.StartX;
+                int rightClearTiles = section.EndX - hazardCell.x;
+                bool hasLeftClearance =
+                    leftClearTiles >= minimumClearTiles;
+                bool hasRightClearance =
+                    rightClearTiles >= minimumClearTiles;
+                if (hasLeftClearance == true && hasRightClearance == true)
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>함정과 다른 오브젝트가 동일한 정적 발판 구간 위에 있는지 확인합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="hazardCell">기준으로 사용할 함정의 타일 좌표입니다.</param>
+    /// <param name="otherX">비교할 다른 오브젝트의 X 좌표입니다.</param>
+    /// <returns>두 오브젝트가 같은 정적 발판 구간에 있으면 참을 반환합니다.</returns>
+    public static bool SharesPlatformSection(
+        int stageNumber,
+        Vector2Int hazardCell,
+        float otherX)
+    {
+        PlatformSection[] sections = GetStageSections(stageNumber);
+        foreach (PlatformSection section in sections)
+        {
+            bool matchesHeight = section.HeightY == hazardCell.y;
+            bool containsHazard =
+                hazardCell.x >= section.StartX &&
+                hazardCell.x <= section.EndX;
+            bool containsOther =
+                otherX >= section.StartX &&
+                otherX <= section.EndX;
+            if (matchesHeight == true &&
+                containsHazard == true &&
+                containsOther == true)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /// <summary>스테이지의 수평 길이에 맞춰 카메라 추적 범위를 설정합니다.</summary>
+    /// <param name="stageNumber">카메라 범위를 적용할 스테이지 번호입니다.</param>
+    private static void ConfigureStageCamera(int stageNumber)
+    {
+        CameraFollow cameraFollow =
+            Object.FindFirstObjectByType<CameraFollow>();
+        GameObject player = GameObject.FindGameObjectWithTag("Player");
+        if (cameraFollow == null || player == null)
+        {
+            return;
+        }
+
+        float maximumX = stageNumber == 1 ? 108f : 84f;
+        if (stageNumber == 3)
+        {
+            maximumX = 94f;
+        }
+        cameraFollow.Configure(player.transform, 0f, maximumX);
     }
 
     /// <summary>발판 사이 높이와 수평 간격이 플레이어의 점프 한계를 넘지 않는지 검사합니다.</summary>
@@ -263,7 +571,25 @@ public static class MultiStageBuilder
                 current.StartX - previous.EndX - 1,
                 previous.StartX - current.EndX - 1,
                 0);
-            if (heightDifference > 3 || horizontalGap > 3)
+            bool needsMovingPlatform =
+                heightDifference > 3 || horizontalGap > 3;
+            bool hasMovingPlatformConnection =
+                IsMovingPlatformConnection(stageNumber, sectionIndex);
+            float verticalClearance = heightDifference - 1f;
+            bool hasLowOverhead =
+                heightDifference > 0 && verticalClearance < 1.3f;
+            bool hasSideClearance = horizontalGap >= 2;
+            if (hasLowOverhead == true &&
+                hasSideClearance == false)
+            {
+                throw new System.InvalidOperationException(
+                    "Stage " + stageNumber +
+                    " platform " + sectionIndex +
+                    " does not leave enough side clearance for the player collider.");
+            }
+
+            if (needsMovingPlatform == true &&
+                hasMovingPlatformConnection == false)
             {
                 throw new System.InvalidOperationException(
                     "Stage " + stageNumber +
@@ -273,6 +599,32 @@ public static class MultiStageBuilder
 
             sectionIndex++;
         }
+    }
+
+    /// <summary>정적 발판 사이의 큰 간격이 의도된 이동 플랫폼 구간인지 확인합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    /// <param name="sectionIndex">현재 도착 발판의 배열 인덱스입니다.</param>
+    /// <returns>이동 플랫폼으로 연결되는 구간이면 참을 반환합니다.</returns>
+    private static bool IsMovingPlatformConnection(
+        int stageNumber,
+        int sectionIndex)
+    {
+        if (stageNumber == 1 && sectionIndex == 3)
+        {
+            return true;
+        }
+
+        if (stageNumber == 2 && sectionIndex == 4)
+        {
+            return true;
+        }
+
+        if (stageNumber == 3 && sectionIndex == 4)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     /// <summary>시작, 가운데, 끝 타일을 구분해 가로 발판 한 줄을 그립니다.</summary>
@@ -421,28 +773,31 @@ public static class MultiStageBuilder
             SpawnPatrol(
                 patrolPrefab,
                 "Forest Patrol",
-                18f,
+                20f,
                 -2.2f,
-                16f,
-                21f,
+                18f,
+                22f,
                 1.45f);
             SpawnEnemy(
                 chasingPrefab,
                 "Forest Chaser",
-                34f,
+                38f,
                 -2.2f);
-            SpawnEnemy(
+            SpawnRanged(
                 rangedPrefab,
                 "Forest Lookout",
-                49f,
-                -2.2f);
+                63f,
+                -2.2f,
+                5f,
+                51f,
+                66f);
             SpawnPatrol(
                 patrolPrefab,
                 "Forest Upper Patrol",
-                62f,
-                9.8f,
-                60f,
-                64f,
+                90f,
+                6.8f,
+                86f,
+                94f,
                 1.2f);
             return;
         }
@@ -452,71 +807,64 @@ public static class MultiStageBuilder
             SpawnPatrol(
                 patrolPrefab,
                 "Twilight Patrol",
-                16f,
+                18f,
                 -2.2f,
-                14f,
-                19f,
+                15f,
+                18f,
                 1.55f);
             SpawnEnemy(
                 chasingPrefab,
                 "Twilight Chaser",
-                29f,
+                32f,
                 -2.2f);
-            SpawnEnemy(
+            SpawnRanged(
                 rangedPrefab,
                 "Twilight Lookout",
+                55f,
+                -2.2f,
+                5f,
                 43f,
-                -2.2f);
+                61f);
             SpawnPatrol(
                 patrolPrefab,
                 "Twilight Upper Patrol",
-                52f,
-                3.8f,
+                44f,
+                6.8f,
+                40f,
                 49f,
-                54f,
                 1.25f);
-            SpawnEnemy(
-                rangedPrefab,
-                "Twilight Upper Lookout",
-                69f,
-                15.8f);
             return;
         }
 
         SpawnPatrol(
             patrolPrefab,
             "Crimson Patrol",
-            17f,
+            42f,
             -2.2f,
-            15f,
-            20f,
+            40f,
+            43f,
             1.4f);
         SpawnEnemy(
             chasingPrefab,
             "Crimson Chaser",
-            31f,
+            32f,
             -2.2f);
-        SpawnEnemy(
+        SpawnRanged(
             rangedPrefab,
             "Crimson Lookout",
-            47f,
-            -2.2f);
+            21f,
+            -2.2f,
+            4f,
+            12f,
+            23f);
         SpawnPatrol(
             patrolPrefab,
             "Crimson Upper Patrol",
-            50f,
-            12.8f,
-            48f,
-            52f,
+            73f,
+            4.8f,
+            72f,
+            73f,
             1.15f);
-        SpawnPatrol(
-            patrolPrefab,
-            "Crimson High Patrol",
-            65f,
-            18.8f,
-            64f,
-            67f,
-            1.1f);
     }
 
     /// <summary>기존 별과 목표를 제거하고 새 진행 경로의 안전한 위치에 다시 배치합니다.</summary>
@@ -555,7 +903,7 @@ public static class MultiStageBuilder
         GameObject goal =
             (GameObject)PrefabUtility.InstantiatePrefab(goalPrefab);
         goal.name = "Stage " + stageNumber + " Goal";
-        goal.transform.position = new Vector3(77f, 34.75f, 0f);
+        goal.transform.position = GetStageGoalPosition(stageNumber);
 
         GameObject player = GameObject.FindGameObjectWithTag("Player");
         GameManager manager =
@@ -571,6 +919,84 @@ public static class MultiStageBuilder
         }
     }
 
+    /// <summary>서로 다른 최종 발판에 맞는 스테이지별 목표 위치를 반환합니다.</summary>
+    /// <param name="stageNumber">목표 위치를 가져올 스테이지 번호입니다.</param>
+    /// <returns>해당 스테이지의 목표 월드 위치입니다.</returns>
+    /// <summary>스타가 적의 시작 위치나 순찰 범위와 겹치지 않는지 검사합니다.</summary>
+    /// <param name="stageNumber">검사할 스테이지 번호입니다.</param>
+    private static void ValidateStarEnemySpacing(int stageNumber)
+    {
+        Collectible[] stars =
+            Object.FindObjectsByType<Collectible>(
+                FindObjectsSortMode.None);
+        StompableEnemy[] enemies =
+            Object.FindObjectsByType<StompableEnemy>(
+                FindObjectsSortMode.None);
+        foreach (Collectible star in stars)
+        {
+            foreach (StompableEnemy enemy in enemies)
+            {
+                float verticalDistance = Mathf.Abs(
+                    star.transform.position.y -
+                    enemy.transform.position.y);
+                bool isOnSamePlatform = verticalDistance < 1.5f;
+                if (isOnSamePlatform == false)
+                {
+                    continue;
+                }
+
+                float enemyLeftX = enemy.transform.position.x;
+                float enemyRightX = enemy.transform.position.x;
+                PatrolEnemy patrolEnemy =
+                    enemy.GetComponent<PatrolEnemy>();
+                if (patrolEnemy != null)
+                {
+                    SerializedObject patrolData =
+                        new SerializedObject(patrolEnemy);
+                    enemyLeftX =
+                        patrolData.FindProperty("leftX").floatValue;
+                    enemyRightX =
+                        patrolData.FindProperty("rightX").floatValue;
+                }
+
+                float leftClearance = enemyLeftX -
+                    star.transform.position.x;
+                float rightClearance =
+                    star.transform.position.x - enemyRightX;
+                bool isSafelyLeft = leftClearance >= 3f;
+                bool isSafelyRight = rightClearance >= 3f;
+                bool hasSafeSeparation =
+                    isSafelyLeft == true || isSafelyRight == true;
+                if (hasSafeSeparation == false)
+                {
+                    throw new System.InvalidOperationException(
+                        "Stage " + stageNumber +
+                        " star at " + star.transform.position +
+                        " overlaps the safe space of enemy " +
+                        enemy.name + ".");
+                }
+            }
+        }
+    }
+
+    /// <summary>스테이지의 마지막 발판에 맞는 목표 위치를 반환합니다.</summary>
+    /// <param name="stageNumber">목표 위치를 가져올 스테이지 번호입니다.</param>
+    /// <returns>해당 스테이지의 목표 지점 월드 좌표입니다.</returns>
+    private static Vector3 GetStageGoalPosition(int stageNumber)
+    {
+        if (stageNumber == 1)
+        {
+            return new Vector3(108f, 25.75f, 0f);
+        }
+
+        if (stageNumber == 2)
+        {
+            return new Vector3(77f, 28.75f, 0f);
+        }
+
+        return new Vector3(91f, 26.75f, 0f);
+    }
+
     /// <summary>각 스테이지의 새 발판 경로를 안내하도록 배치한 별 위치를 반환합니다.</summary>
     /// <param name="stageNumber">별 위치를 가져올 스테이지 번호입니다.</param>
     /// <returns>해당 스테이지의 모든 별 월드 좌표입니다.</returns>
@@ -582,20 +1008,17 @@ public static class MultiStageBuilder
             {
                 new Vector2(4f, -2f),
                 new Vector2(14f, -2f),
-                new Vector2(30f, -2f),
-                new Vector2(52f, -2f),
-                new Vector2(56f, 1f),
-                new Vector2(64f, 4f),
-                new Vector2(70f, 7f),
-                new Vector2(62f, 10f),
-                new Vector2(70f, 13f),
-                new Vector2(62f, 16f),
-                new Vector2(70f, 19f),
-                new Vector2(62f, 22f),
-                new Vector2(70f, 25f),
-                new Vector2(62f, 28f),
-                new Vector2(70f, 31f),
-                new Vector2(76f, 34f)
+                new Vector2(34f, -2f),
+                new Vector2(56f, -2f),
+                new Vector2(70f, 1f),
+                new Vector2(80f, 4f),
+                new Vector2(98f, 10f),
+                new Vector2(104f, 10f),
+                new Vector2(106f, 13f),
+                new Vector2(96f, 16f),
+                new Vector2(86f, 19f),
+                new Vector2(94f, 22f),
+                new Vector2(105f, 25f)
             };
         }
 
@@ -603,43 +1026,43 @@ public static class MultiStageBuilder
         {
             return new Vector2[]
             {
-                new Vector2(4f, -2f),
+                new Vector2(23f, -2f),
                 new Vector2(12f, -2f),
-                new Vector2(27f, -2f),
-                new Vector2(39f, -2f),
-                new Vector2(58f, -2f),
-                new Vector2(61f, 1f),
-                new Vector2(51f, 4f),
-                new Vector2(45f, 7f),
-                new Vector2(53f, 10f),
-                new Vector2(60f, 13f),
-                new Vector2(67f, 16f),
-                new Vector2(58f, 19f),
-                new Vector2(52f, 22f),
-                new Vector2(60f, 25f),
-                new Vector2(67f, 28f),
-                new Vector2(75f, 34f)
+                new Vector2(28f, -2f),
+                new Vector2(50f, -2f),
+                new Vector2(60f, -2f),
+                new Vector2(60f, 4f),
+                new Vector2(55f, 4f),
+                new Vector2(39f, 10f),
+                new Vector2(33f, 10f),
+                new Vector2(22f, 13f),
+                new Vector2(30f, 16f),
+                new Vector2(42f, 19f),
+                new Vector2(53f, 22f),
+                new Vector2(64f, 25f),
+                new Vector2(75f, 28f)
             };
         }
 
         return new Vector2[]
         {
-            new Vector2(4f, -2f),
-            new Vector2(13f, -2f),
-            new Vector2(29f, -2f),
-            new Vector2(42f, -2f),
-            new Vector2(54f, 1f),
-            new Vector2(59f, 4f),
-            new Vector2(66f, 7f),
-            new Vector2(58f, 10f),
-            new Vector2(51f, 13f),
-            new Vector2(58f, 16f),
-            new Vector2(66f, 19f),
-            new Vector2(73f, 22f),
-            new Vector2(65f, 25f),
-            new Vector2(58f, 28f),
-            new Vector2(66f, 31f),
-            new Vector2(76f, 34f)
+            new Vector2(2f, -2f),
+            new Vector2(16f, -2f),
+            new Vector2(27f, -2f),
+            new Vector2(36f, -2f),
+            new Vector2(46f, -2f),
+            new Vector2(59f, 3f),
+            new Vector2(68f, 5f),
+            new Vector2(79f, 7f),
+            new Vector2(71f, 9f),
+            new Vector2(63f, 11f),
+            new Vector2(52f, 13f),
+            new Vector2(40f, 15f),
+            new Vector2(54f, 17f),
+            new Vector2(63f, 19f),
+            new Vector2(71f, 21f),
+            new Vector2(79f, 23f),
+            new Vector2(83f, 23f)
         };
     }
 
@@ -682,6 +1105,43 @@ public static class MultiStageBuilder
             (GameObject)PrefabUtility.InstantiatePrefab(prefab);
         enemy.name = name;
         enemy.transform.position = new Vector3(x, y, 0f);
+        return enemy;
+    }
+
+    /// <summary>투사체를 피할 준비 거리와 적을 밟을 공간을 검증한 뒤 원거리 적을 배치합니다.</summary>
+    /// <param name="prefab">배치할 원거리 적 프리팹입니다.</param>
+    /// <param name="name">씬에서 사용할 적 이름입니다.</param>
+    /// <param name="x">적을 배치할 X 좌표입니다.</param>
+    /// <param name="y">적을 배치할 Y 좌표입니다.</param>
+    /// <param name="sightDistance">플레이어를 감지할 수평 거리입니다.</param>
+    /// <param name="approachStartX">플레이어가 전투 발판에 진입하는 X 좌표입니다.</param>
+    /// <param name="platformEndX">전투 발판의 오른쪽 끝 X 좌표입니다.</param>
+    /// <returns>검증 후 생성된 원거리 적 오브젝트입니다.</returns>
+    private static GameObject SpawnRanged(
+        GameObject prefab,
+        string name,
+        float x,
+        float y,
+        float sightDistance,
+        float approachStartX,
+        float platformEndX)
+    {
+        float preparationDistance =
+            x - sightDistance - approachStartX;
+        float stompLandingDistance = platformEndX - x;
+        bool hasPreparationDistance = preparationDistance >= 5f;
+        bool hasStompLandingDistance = stompLandingDistance >= 2f;
+        if (hasPreparationDistance == false ||
+            hasStompLandingDistance == false)
+        {
+            throw new System.InvalidOperationException(
+                name + " does not have enough projectile avoidance space.");
+        }
+
+        GameObject enemy = SpawnEnemy(prefab, name, x, y);
+        RangedEnemyLookout lookout =
+            enemy.GetComponent<RangedEnemyLookout>();
+        lookout.SetSightDistance(sightDistance);
         return enemy;
     }
 }

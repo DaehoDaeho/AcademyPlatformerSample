@@ -72,6 +72,13 @@ public sealed class RangedEnemyLookout : MonoBehaviour
         obstacleLayers = LayerMask.GetMask("Ground");
     }
 
+    /// <summary>현재 스테이지의 회피 공간에 맞춰 수평 시야 거리를 변경합니다.</summary>
+    /// <param name="distance">새로 적용할 최대 수평 감지 거리입니다.</param>
+    public void SetSightDistance(float distance)
+    {
+        sightDistance = Mathf.Max(1f, distance);
+    }
+
     /// <summary>
     /// 플레이어를 찾고 최초 방향을 화면에 반영합니다.
     /// </summary>
